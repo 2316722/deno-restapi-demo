@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ユーザー登録ページ</title>
+    <!-- prettier-ignore -->
+    <style>
+      form { margin: 2em 1em; }
+      label { display: block; margin: 1ex 0; }
+    </style>
+  </head>
+  <body>
+    <h1>ユーザー登録</h1>
+    <form>
+      <label>
+        ユーザー名：
+        <input type="text" id="username" placeholder="ユーザー名" required />
+      </label>
+      <label>
+        パスワード：
+        <input type="password" id="password" placeholder="パスワード" required />
+      </label>
+      <button type="submit">登録</button>
+    </form>
+
+    <p></p>
+  </body>
+  <script>
+    const form = document.querySelector('form');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      const res = await fetch('/api/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+
+      if (res.ok) {
+        location.href = 'login.html';
+      } else {
+        const data = await res.json();
+        document.querySelector('p').textContent = data.message;
+      }
+    });
+  </script>
+</html>
