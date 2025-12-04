@@ -96,7 +96,7 @@
         const data = await res.json();
         const loginUser = document.getElementById('loginUser');
         loginUser.textContent = `${data.username} さん`;
-        updateTable(); // 一覧表示
+        updateTable(); //  一覧表示
       }
       // ログインしていなければ1秒後に login.html にリダイレクト
       else {
