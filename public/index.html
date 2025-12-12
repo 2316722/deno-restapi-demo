@@ -8,7 +8,8 @@
   </head>
 
   <body>
-    <div class="status-info">ユーザー: <span id="loginUser"></span> （<span id="logout">ログアウト</span>）</div>
+    <div class="status-info">ユーザー: <span id="loginUser"><button id="logout-button" style="margin-left: 10px; cursor: pointer;">ログアウト</button>
+</div>
 
     <section>
       <div id="create">
@@ -119,7 +120,7 @@
     });
 
     /* ログアウト */
-    document.getElementById('logout').addEventListener('click', logout);
+    document.getElementById('logout-button').addEventListener('click', logout);
     async function logout() {
       const res = await fetch('/api/logout', { method: 'POST' });
       if (res.ok) location.href = 'login.html';
