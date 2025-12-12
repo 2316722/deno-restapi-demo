@@ -234,3 +234,4 @@ app.on('GET', ['/signup.html', '/login.html'], async (c, next) => {
 app.get('/*', serveStatic({ root: './public' }));
 
 Deno.serve(app.fetch);
+//コメントアウトを追加
