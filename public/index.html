@@ -29,17 +29,20 @@
     <form id="colorForm">
       <div class="input-group">
         <p>色を選んでね：</p>
+        
         <label>
-          <input type="color" name="color" value="#0000ff" />
+          <input type="color" id="colorPicker" name="color_picker" value="#0000ff" />
           カラーピッカーで選択
         </label>
+        
         <br>
-    
-      <label style="margin-top: 10px; display: block;">
-        <input type="text" id="colorCodeInput" name="color_code" value="#0000ff" 
-               placeholder="#RRGGBB 形式で入力" style="width: 150px;" maxlength="7" />
-         直接カラーコードを入力
-    </label>
+        
+        <label style="margin-top: 10px; display: block;">
+          <input type="text" id="colorCodeInput" name="color_code" value="#0000ff" 
+                 placeholder="#RRGGBB 形式で入力" style="width: 150px;" maxlength="7" />
+          直接カラーコードを入力
+        </label>
+        
       </div>
 
       <div class="input-group">
@@ -54,6 +57,37 @@
     <p><a href="list.html">回答せずに一覧だけ見る</a></p>
 
     <script>
+      // DOM要素の取得
+      const colorPicker = document.getElementById('colorPicker');
+      const colorCodeInput = document.getElementById('colorCodeInput');
+      const logoutLink = document.getElementById('logout');
+      const colorForm = document.getElementById('colorForm');
+
+      // ----------------------------------------------------
+      // 相互同期ロジック
+      // ----------------------------------------------------
+
+      // カラーピッカーの値が変更されたら、テキスト入力欄を更新
+      colorPicker.addEventListener('input', () => {
+          colorCodeInput.value = colorPicker.value.toUpperCase();
+      });
+
+      // テキスト入力欄の値が変更されたら、有効なHexコードであればカラーピッカーを更新
+      colorCodeInput.addEventListener('input', (e) => {
+          let value = e.target.value.trim().toUpperCase();
+
+          // Hexコード形式（#に続く6桁の英数字）か検証
+          if (/^#[0-9A-F]{6}$/.test(value)) {
+              colorPicker.value = value;
+          } 
+          // 有効なHex形式でない場合は、カラーピッカーは更新しない（無効な入力状態を許容）
+      });
+
+
+      // ----------------------------------------------------
+      // 既存の機能
+      // ----------------------------------------------------
+
       // ログインチェック
       document.addEventListener('DOMContentLoaded', async () => {
         const res = await fetch('/api/check');
@@ -66,26 +100,35 @@
       });
 
       // ログアウト処理
-      document.getElementById('logout').addEventListener('click', async (e) => {
+      logoutLink.addEventListener('click', async (e) => {
         e.preventDefault();
         await fetch('/api/logout', { method: 'POST' });
         location.href = 'login.html';
       });
 
-      // 送信処理
-      document.getElementById('colorForm').addEventListener('submit', async (e) => {
+      // 送信処理 (変更あり)
+      colorForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const form = e.target;
+        
+        // 最終的に送信するカラーコードを決定
+        // 1. まずピッカーの値を初期値として採用
+        let finalColor = colorPicker.value.toUpperCase(); 
+
+        // 2. テキストボックスに入力された値が有効なHexコードであれば、そちらを優先
+        const inputValue = colorCodeInput.value.trim().toUpperCase();
+        if (/^#[0-9A-F]{6}$/.test(inputValue)) {
+            finalColor = inputValue;
+        }
 
         const record = {
-          color: form.color.value, // カラーコード（例: #ff0000）が取れます
-          comment: form.comment.value
+          color: finalColor, // 決定された最終的なカラーコード
+          comment: document.querySelector('input[name="comment"]').value // コメントの値を取得
         };
 
         const body = new FormData();
         body.append('record', JSON.stringify(record));
 
-        // 送信先を colors に変更
+        // 送信
         const res = await fetch('/api/colors', {
           method: 'POST',
           body: body
