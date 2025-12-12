@@ -143,13 +143,19 @@ app.post('/api/pokemons', async (c) => {
   const body = await c.req.parseBody();
   const record = JSON.parse(body['record']);
 
+  // ★追加：データの中に「投稿者名」を記録しておく（ランキング表示で誰のか分かるように）
+  record['author'] = username;
+
   // IDと生成時刻を生成してレコードに追加
   const pokemonId = await getNextId();
   record['id'] = pokemonId;
   record['createdAt'] = new Date().toISOString();
 
-  // リソースの作成
-  await kv.set(['pokemons', username, pokemonId], record);
+  // ★修正前：キーにユーザー名を含めていた
+  // await kv.set(['pokemons', username, pokemonId], record);
+
+  // ★修正後：キーからユーザー名を外して、フラットに保存する
+  await kv.set(['pokemons', pokemonId], record);
 
   // レスポンスの作成
   c.status(201); // 201 Created
@@ -160,11 +166,8 @@ app.post('/api/pokemons', async (c) => {
 
 /*** コレクションの取得 ***/
 app.get('/api/pokemons', async (c) => {
-  const payload = c.get('jwtPayload');
-  const username = payload.sub;
-
-  // ユーザー名もprefixに入れて、ログインユーザーのデータのみを取得する
-  const pkmns = await kv.list({ prefix: ['pokemons', username] });
+  // ★修正後：'pokemons' 以下の全ユーザーのデータを取得！
+  const pkmns = await kv.list({ prefix: ['pokemons'] });
 
   // リソースがあったとき
   const pkmnList = await Array.fromAsync(pkmns);
@@ -180,10 +183,13 @@ app.get('/api/pokemons', async (c) => {
 
 /* レコードリストの削除（授業用） */
 app.delete('/api/pokemons', async (c) => {
+  // ユーザー名はキーに含まれなくなったので、取得不要ですが、
+  // ログインチェックとして残しておくのはOKです
   const payload = c.get('jwtPayload');
   const username = payload.sub;
 
-  const deleteList = await kv.list({ prefix: ['pokemons', username] });
+  // ★修正：ユーザー名を外して、pokemonsフォルダ全体を対象にする
+  const deleteList = await kv.list({ prefix: ['pokemons'] });
 
   // レコードを一括で削除する
   const atomic = kv.atomic();
@@ -193,7 +199,8 @@ app.delete('/api/pokemons', async (c) => {
   // レスポンス
   if (result.ok) {
     await kv.delete(['counter', 'pokemons']); // 連番IDをリセット
-    c.status(); // 204 No Content
+    // c.status(); // ← これだと引数が足りずエラーになる可能性があります
+    c.status(204); // ★修正：ステータスコード204を明記
     return c.body(null);
   } else {
     c.status(503); // 503 Service Unavailable

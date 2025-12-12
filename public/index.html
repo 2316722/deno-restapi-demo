@@ -8,52 +8,46 @@
   </head>
 
   <body>
-    <!-- prettier-ignore -->
-    <div class="status-info">
-      ユーザー: <span id="loginUser"></span>
-      （<span id="logout">ログアウト</span>）
-    </div>
+    <div class="status-info">ユーザー: <span id="loginUser"></span> （<span id="logout">ログアウト</span>）</div>
 
     <section>
       <div id="create">
-        <!-- prettier-ignore -->
         <form>
-          <div class="row">
-            <label>名前：</label><input name="name" />
-          </div>
+          <div class="row"><label>名前：</label><input name="name" /></div>
           <div class="row">
             <label>タイプ：</label>
             <div class="radio">
-              <input type="radio" name="type" value="水" />水 &nbsp;
-              <input type="radio" name="type" value="炎" />炎 &nbsp;
-              <input type="radio" name="type" value="草" />草 &nbsp;
-              <input type="radio" name="type" value="氷" />氷 &nbsp;
-              <input type="radio" name="type" value="悪" />悪
+              <input type="radio" name="type" value="水" />水 &nbsp; <input type="radio" name="type" value="炎" />炎
+              &nbsp; <input type="radio" name="type" value="草" />草 &nbsp;
+              <input type="radio" name="type" value="氷" />氷 &nbsp; <input type="radio" name="type" value="悪" />悪
             </div>
           </div>
-          <div class="row">
-            <label>レベル：</label><input type="number" name="level" />
-          </div>
-          <div class="row">
-            <label>愛称：</label><input name="nickname" />
-          </div>
+          <div class="row"><label>レベル：</label><input type="number" name="level" /></div>
+          <div class="row"><label>愛称：</label><input name="nickname" /></div>
           <div class="cap"><button type="submit">作成</button></div>
         </form>
       </div>
 
       <div id="display">
-        <!-- prettier-ignore -->
         <table>
-          <caption>ポケモン一覧</caption>
-          <thead><tr>
-            <th>ID</th><th>名前</th><th>タイプ</th><th>レベル</th><th>愛称</th>
-          </tr></thead>
+          <caption>
+            ポケモン一覧
+          </caption>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>名前</th>
+              <th>タイプ</th>
+              <th>レベル</th>
+              <th>愛称</th>
+              <th>投稿者</th>
+            </tr>
+          </thead>
           <tbody></tbody>
         </table>
       </div>
     </section>
 
-    <!-- ↓この機能は本来推奨されない -->
     <div id="deleteAll">
       <button>すべてのデータを削除</button>
     </div>
@@ -72,15 +66,18 @@
 
       // tbody要素を更新
       for (const record of list) {
-        const { id, name, type, level, nickname } = record;
-        const fields = [id, name, type, level, nickname];
+        // ★修正2：author（投稿者）を取り出す
+        const { id, name, type, level, nickname, author } = record;
+
+        // ★修正2：表示リストに author を追加
+        const fields = [id, name, type, level, nickname, author];
 
         // テーブルの更新
         const tr = document.createElement('tr');
         tbody.appendChild(tr);
         for (const entry of fields) {
           const td = document.createElement('td');
-          td.textContent = entry;
+          td.textContent = entry; // authorがない古いデータは空欄になります
           tr.appendChild(td);
         }
       }
@@ -169,7 +166,7 @@
       if (res.ok) {
         updateTable();
       } else {
-        console.warn(updated.message);
+        console.warn('削除に失敗しました');
       }
     }
   </script>
