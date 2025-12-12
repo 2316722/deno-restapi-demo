@@ -20,233 +20,161 @@ const app = new Hono();
 const kv = await Deno.openKv();
 
 /*
- * ユーザー認証
+ * ---------------------
+ * ユーザー認証エリア (変更なし)
+ * ---------------------
  */
 
 /*** ユーザー登録 ***/
 app.post('/api/signup', async (c) => {
-  // 登録情報の取得
   const { username, password } = await c.req.json();
   if (!username || !password) {
-    c.status(400); // 400 Bad Request
+    c.status(400);
     return c.json({ message: 'ユーザー名とパスワードは必須です' });
   }
 
-  // ユーザー名がすでにないか確認
   const userExists = await kv.get(['users', username]);
   if (userExists.value) {
-    c.status(409); // 409 Conflict
+    c.status(409);
     return c.json({ message: 'このユーザー名は既に使用されています' });
   }
 
-  // パスワードをハッシュ化してユーザー名とともにデータベースに記録
   const hashedPassword = await hash(password);
   const user = { username, hashedPassword };
   await kv.set(['users', username], user);
 
-  c.status(201); // 201 Created
+  c.status(201);
   return c.json({ message: 'ユーザー登録が成功しました' });
 });
 
 /*** ログイン ***/
 app.post('/api/login', async (c) => {
-  // ログイン情報の取得
   const { username, password } = await c.req.json();
   const userEntry = await kv.get(['users', username]);
   const user = userEntry.value;
 
   if (!user) {
-    c.status(401); // 401 Unauthorized
+    c.status(401);
     return c.json({ message: 'ユーザー名が無効です' });
   }
 
-  // ハッシュ化されたパスワードと比較
   if (!(await verify(password, user.hashedPassword))) {
-    c.status(401); // 401 Unauthorized
+    c.status(401);
     return c.json({ message: 'パスワードが無効です' });
   }
 
-  // JWTの本体（ペイロード）を設定
   const payload = {
-    sub: user.username, // ユーザー識別子（連番IDでもよい）
-    // name: user.username,  // 表示用のユーザー名
-    iat: Math.floor(Date.now() / 1000), // 発行日時
+    sub: user.username,
+    iat: Math.floor(Date.now() / 1000),
     exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 // 24時間有効
   };
 
-  // JWT（トークン）を生成
   const token = await sign(payload, JWT_SECRET);
 
-  // JWTをHttpOnlyのクッキーに設定
   setCookie(c, COOKIE_NAME, token, {
     path: '/',
     httpOnly: true,
-    secure: false, // 開発環境のためfalseにしているが本番環境ではtrueにする
+    secure: false, // 本番環境ではtrue
     sameSite: 'Strict',
-    maxAge: 60 * 60 * 24 // 24時間有効
+    maxAge: 60 * 60 * 24
   });
 
-  // レスポンス
   return c.json({ message: 'ログイン成功', username: user.username });
 });
 
 /* 上記以外の /api 以下へのアクセスにはログインが必要 */
 app.use('/api/*', jwt({ secret: JWT_SECRET, cookie: COOKIE_NAME }));
-// ↑ここで照合に成功すると jwtPayload というキーにJWTのペイロード（本体）が記録される
-// ↑ログインしていなければ「401 Unauthorized」が返される
 
 /*** ログアウト ***/
 app.post('/api/logout', (c) => {
-  // JWTを含むクッキーを削除
   deleteCookie(c, COOKIE_NAME, {
     path: '/',
     httpOnly: true,
-    secure: false, // ログイン時の設定に合わせる
+    secure: false,
     sameSite: 'Strict'
   });
-
-  c.status(204); // 204 No Content
+  c.status(204);
   return c.body(null);
 });
 
 /*** ログインチェック ***/
 app.get('/api/check', async (c) => {
   const payload = c.get('jwtPayload');
-  const username = payload.sub;
-  return c.json({ username });
+  return c.json({ username: payload.sub });
 });
 
 /*
- * API
+ * ---------------------
+ * 好きな色アプリ用 API (ここが新しい部分)
+ * ---------------------
  */
 
-/*** （デバッグ用）全ユーザー名の取得 ***/
-app.get('/api/users', async (c) => {
-  // usersフォルダの中身を全部リストアップ
-  const list = await kv.list({ prefix: ['users'] });
-  const users = [];
-
-  for await (const entry of list) {
-    // パスワード（hashedPassword）は見せると危険なので、
-    // ユーザー名（username）だけをリストに入れる
-    users.push(entry.value.username);
-  }
-
-  return c.json(users);
-});
-
-/* 連番のIDを生成する関数 */
+/* 連番ID生成 */
 async function getNextId() {
-  const key = ['counter', 'pokemons'];
+  const key = ['counter', 'colors'];
   const res = await kv.atomic().sum(key, 1n).commit();
-  if (!res.ok) {
-    console.error('IDの生成に失敗しました。');
-    return null;
-  }
   const counter = await kv.get(key);
-
   return Number(counter.value);
 }
 
-/*** リソースの作成 ***/
-app.post('/api/pokemons', async (c) => {
-  // JWTからユーザー名を取得
+/*** 回答の投稿 (POST) ***/
+app.post('/api/colors', async (c) => {
   const payload = c.get('jwtPayload');
   const username = payload.sub;
 
-  // 作成するポケモンデータの取得
   const body = await c.req.parseBody();
-  const record = JSON.parse(body['record']);
+  const record = JSON.parse(body['record']); // { color: "#ff0000", comment: "..." }
 
-  // ★追加：データの中に「投稿者名」を記録しておく（ランキング表示で誰のか分かるように）
+  // 投稿者と日時を追加
   record['author'] = username;
-
-  // IDと生成時刻を生成してレコードに追加
-  const pokemonId = await getNextId();
-  record['id'] = pokemonId;
   record['createdAt'] = new Date().toISOString();
 
-  // ★修正前：キーにユーザー名を含めていた
-  // await kv.set(['pokemons', username, pokemonId], record);
+  // ID生成
+  const id = await getNextId();
+  record['id'] = id;
 
-  // ★修正後：キーからユーザー名を外して、フラットに保存する
-  await kv.set(['pokemons', pokemonId], record);
+  // 保存（キーは 'colors' と ID）
+  await kv.set(['colors', id], record);
 
-  // レスポンスの作成
-  c.status(201); // 201 Created
-  c.header('Location', `/pokemons/${pokemonId}`);
-
+  c.status(201);
   return c.json({ record });
 });
 
-/*** コレクションの取得 ***/
-app.get('/api/pokemons', async (c) => {
-  // ★修正後：'pokemons' 以下の全ユーザーのデータを取得！
-  const pkmns = await kv.list({ prefix: ['pokemons'] });
+/*** 回答一覧の取得 (GET) ***/
+app.get('/api/colors', async (c) => {
+  // 'colors' のデータを全件取得
+  const list = await kv.list({ prefix: ['colors'] });
+  const records = await Array.fromAsync(list);
 
-  // リソースがあったとき
-  const pkmnList = await Array.fromAsync(pkmns);
-  if (pkmnList.length > 0) {
-    return c.json(pkmnList.map((e) => e.value));
-  }
-  // リソースがなかったとき
-  else {
-    c.status(404); // 404 Not Found
-    return c.json({ message: 'pokemonコレクションのデータは1つもありませんでした。' });
-  }
+  // 新しい順（降順）にする
+  const data = records.map((e) => e.value).reverse();
+
+  return c.json(data);
 });
 
-/* レコードリストの削除（授業用） */
-app.delete('/api/pokemons', async (c) => {
-  // ユーザー名はキーに含まれなくなったので、取得不要ですが、
-  // ログインチェックとして残しておくのはOKです
-  const payload = c.get('jwtPayload');
-  const username = payload.sub;
-
-  // ★修正：ユーザー名を外して、pokemonsフォルダ全体を対象にする
-  const deleteList = await kv.list({ prefix: ['pokemons'] });
-
-  // レコードを一括で削除する
-  const atomic = kv.atomic();
-  for await (const entry of deleteList) atomic.delete(entry.key);
-  const result = await atomic.commit();
-
-  // レスポンス
-  if (result.ok) {
-    await kv.delete(['counter', 'pokemons']); // 連番IDをリセット
-    // c.status(); // ← これだと引数が足りずエラーになる可能性があります
-    c.status(204); // ★修正：ステータスコード204を明記
-    return c.body(null);
-  } else {
-    c.status(503); // 503 Service Unavailable
-    return c.json({ message: 'リソースの一括削除に失敗しました。' });
+/*** （デバッグ用）全ユーザー名の取得 ***/
+app.get('/api/users', async (c) => {
+  const list = await kv.list({ prefix: ['users'] });
+  const users = [];
+  for await (const entry of list) {
+    users.push(entry.value.username);
   }
-});
-
-// ユーザーアカウントの一括削除（勉強用）
-app.delete('/api', async (c) => {
-  const deleteList = await kv.list({ prefix: ['users'] });
-  const atomic = kv.atomic();
-  for await (const e of deleteList) atomic.delete(e.key);
-  await atomic.commit();
-  return c.body(null);
+  return c.json(users);
 });
 
 /*
- * ウェブサーバー
+ * ---------------------
+ * ウェブサーバー設定
+ * ---------------------
  */
 
-// ログイン済みならリダイレクト
+// ログイン済みなら入力画面(index.html)へ自動移動
 app.on('GET', ['/signup.html', '/login.html'], async (c, next) => {
   const token = getCookie(c, COOKIE_NAME);
-  if (token) {
-    return c.redirect('/index.html'); // アプリページへリダイレクト
-  }
+  if (token) return c.redirect('/index.html');
   await next();
 });
 
-// ウェブコンテンツ（静的ファイル）の置き場を指定
 app.get('/*', serveStatic({ root: './public' }));
 
 Deno.serve(app.fetch);
-//コメントアウトを追加

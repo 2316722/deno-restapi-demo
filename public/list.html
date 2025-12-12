@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>みんなの好きな色</title>
+    <style>
+      body {
+        padding: 20px;
+        font-family: sans-serif;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+      th,
+      td {
+        border: 1px solid #ccc;
+        padding: 8px;
+        text-align: left;
+        vertical-align: middle;
+      }
+      th {
+        background-color: #f0f0f0;
+      }
+      /* 色を表示する四角い箱のスタイル */
+      .color-box {
+        width: 30px;
+        height: 30px;
+        border: 1px solid #999;
+        display: inline-block;
+        vertical-align: middle;
+        margin-right: 10px;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>みんなの好きな色一覧</h1>
+    <p><a href="index.html">← 入力画面に戻る</a></p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>ユーザー</th>
+          <th>好きな色</th>
+          <th>コメント</th>
+          <th>日時</th>
+        </tr>
+      </thead>
+      <tbody id="listBody"></tbody>
+    </table>
+
+    <script>
+      // ログインチェック ＆ データ取得
+      document.addEventListener('DOMContentLoaded', async () => {
+        const checkRes = await fetch('/api/check');
+        if (!checkRes.ok) {
+          location.href = 'login.html';
+          return;
+        }
+
+        // 取得先を colors に変更
+        const res = await fetch('/api/colors');
+        if (res.ok) {
+          const list = await res.json();
+          const tbody = document.getElementById('listBody');
+
+          list.forEach((item) => {
+            const tr = document.createElement('tr');
+            const date = new Date(item.createdAt).toLocaleString();
+
+            // 色の箱(div)を作って表示します
+            tr.innerHTML = `
+            <td>${item.author}</td>
+            <td>
+              <div class="color-box" style="background-color: ${item.color};"></div>
+              <span>${item.color}</span>
+            </td>
+            <td>${item.comment || ''}</td>
+            <td style="font-size: 0.8em; color: gray;">${date}</td>
+          `;
+            tbody.appendChild(tr);
+          });
+        }
+      });
+    </script>
+  </body>
+</html>
