@@ -120,6 +120,21 @@ app.get('/api/check', async (c) => {
  * API
  */
 
+/*** （デバッグ用）全ユーザー名の取得 ***/
+app.get('/api/users', async (c) => {
+  // usersフォルダの中身を全部リストアップ
+  const list = await kv.list({ prefix: ['users'] });
+  const users = [];
+
+  for await (const entry of list) {
+    // パスワード（hashedPassword）は見せると危険なので、
+    // ユーザー名（username）だけをリストに入れる
+    users.push(entry.value.username);
+  }
+
+  return c.json(users);
+});
+
 /* 連番のIDを生成する関数 */
 async function getNextId() {
   const key = ['counter', 'pokemons'];
