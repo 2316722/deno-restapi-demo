@@ -28,6 +28,10 @@
         </form>
       </div>
 
+      <div style="text-align: right; margin: 10px 0">
+        <button id="refreshBtn" style="padding: 5px 15px; cursor: pointer">🔄 最新の情報を読み込む</button>
+      </div>
+
       <div id="display">
         <table>
           <caption>
@@ -57,19 +61,22 @@
     /* ポケモン一覧（table要素）を更新  */
     async function updateTable() {
       const tbody = document.querySelector('#display tbody');
-      tbody.innerHTML = '';
+
+      // 更新中だとわかるように一旦文字を出す（任意）
+      // tbody.innerHTML = '<tr><td colspan="6">読み込み中...</td></tr>';
 
       // レコードのリストを取得
       const res = await fetch('/api/pokemons');
+
+      // 中身をクリア
+      tbody.innerHTML = '';
+
       if (!res.ok) return;
       const list = await res.json();
 
       // tbody要素を更新
       for (const record of list) {
-        // ★修正2：author（投稿者）を取り出す
         const { id, name, type, level, nickname, author } = record;
-
-        // ★修正2：表示リストに author を追加
         const fields = [id, name, type, level, nickname, author];
 
         // テーブルの更新
@@ -77,11 +84,18 @@
         tbody.appendChild(tr);
         for (const entry of fields) {
           const td = document.createElement('td');
-          td.textContent = entry; // authorがない古いデータは空欄になります
+          td.textContent = entry;
           tr.appendChild(td);
         }
       }
     }
+
+    /* ★追加：更新ボタンの動作 */
+    document.getElementById('refreshBtn').addEventListener('click', async () => {
+      await updateTable();
+      // ボタンを押したことがわかるようにちょっとログを出す（なくてもOK）
+      console.log('一覧を更新しました');
+    });
 
     /* ページ読み込み時にログイン状態を確認 */
     document.addEventListener('DOMContentLoaded', async () => {
