@@ -199,47 +199,40 @@ function getColorCategory(hex) {
           const list = await res.json();
 
           // --- 集計処理 ---
-          const counts = {}; // { '赤系': 5, '青系': 2 ... } のようになる
-
-          // 基準色でカウントを0に初期化
-          BASE_COLORS.forEach((c) => (counts[c.name] = 0));
+         // --- 1. 集計の準備 ---
+          const counts = {}; 
+          Object.values(CATEGORIES).forEach(name => counts[name] = 0);
 
           const tbody = document.getElementById('listBody');
+          tbody.innerHTML = ''; 
 
+          // --- 2. データのループ処理 ---
           list.forEach((item) => {
-            // 色の判定
             const category = getColorCategory(item.color);
+            if (counts[category.name] !== undefined) counts[category.name]++;
 
-            // カウントアップ
-            if (counts[category.name] !== undefined) {
-              counts[category.name]++;
-            }
-
-            // テーブルに行を追加
             const tr = document.createElement('tr');
             const date = new Date(item.createdAt).toLocaleString();
-
             tr.innerHTML = `
-            <td>${item.author}</td>
-            <td>
-              <div class="color-box" style="background-color: ${item.color};"></div>
-              <span>${item.color}</span>
-            </td>
-            <td>${category.name}</td> <td>${item.comment || ''}</td>
-            <td style="font-size: 0.8em; color: gray;">${date}</td>
-          `;
+              <td>${item.author}</td>
+              <td>
+                <div class="color-box" style="background-color: ${item.color};"></div>
+                <span>${item.color}</span>
+              </td>
+              <td>${category.name}</td> 
+              <td>${item.comment || ''}</td>
+              <td style="font-size: 0.8em; color: gray;">${date}</td>
+            `;
             tbody.appendChild(tr);
           });
 
-          // --- ランキング表示処理 ---
+          // --- 3. ランキング表示の準備 ---
           const rankingList = document.getElementById('rankingList');
           rankingList.innerHTML = '';
 
-          // カウント数の多い順に並び替え
-          const sortedCategories = BASE_COLORS.map((c) => {
-            return { ...c, count: counts[c.name] };
+          const sortedCategories = Object.values(CATEGORIES).map((name) => {
+            return { name: name, count: counts[name], css: CATEGORY_CSS[name] };
           }).sort((a, b) => b.count - a.count);
-
           // 合計数（グラフの％計算用）
           const total = list.length || 1;
 
