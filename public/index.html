@@ -68,9 +68,9 @@
       // ----------------------------------------------------
 
       // カラーピッカーの値が変更されたら、テキスト入力欄を更新
-      //colorPicker.addEventListener('input', () => {
-        //  colorCodeInput.value = colorPicker.value.toUpperCase();
-     // });
+      colorPicker.addEventListener('input', () => {
+          colorCodeInput.value = colorPicker.value.toUpperCase();
+     });
 
       // テキスト入力欄の値が変更されたら、有効なHexコードであればカラーピッカーを更新
       colorCodeInput.addEventListener('input', (e) => {
