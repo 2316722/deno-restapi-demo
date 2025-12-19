@@ -176,28 +176,13 @@
         body: body
       });
 
-      // レスポンスの確認
-      const created = await res.json();
-      if (res.ok) {
-        console.log(JSON.stringify(created, null, 2));
-      } else {
-        console.warn(created.message);
-        return;
-      }
-
-      // テーブルを更新
-      updateTable();
-    }
-
-    /* リソースをすべて削除 */
-    document.querySelector('#deleteAll button').addEventListener('click', deleteDataAll);
-    async function deleteDataAll() {
-      const res = await fetch('/api/pokemons', { method: 'DELETE' });
-      if (res.ok) {
-        updateTable();
-      } else {
-        console.warn('削除に失敗しました');
-      }
-    }
-  </script>
+        if (res.ok) {
+          location.href = 'list.html';
+        } else {
+          alert('送信に失敗しました');
+        }
+      });
+      
+    </script>
+  </body>
 </html>
