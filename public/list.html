@@ -101,45 +101,90 @@
     </table>
 
     <script>
-      // 1. 色の基準（この中から一番近い色が選ばれる）
-      const BASE_COLORS = [
-        { name: '赤系', r: 255, g: 0, b: 0, css: '#ff4d4d' },
-        { name: 'オレンジ系', r: 255, g: 165, b: 0, css: '#ffa500' },
-        { name: '黄色系', r: 255, g: 255, b: 0, css: '#ffd700' },
-        { name: '緑系', r: 0, g: 128, b: 0, css: '#4caf50' },
-        { name: '水色系', r: 0, g: 255, b: 255, css: '#00bcd4' },
-        { name: '青系', r: 0, g: 0, b: 255, css: '#2196f3' },
-        { name: '紫系', r: 128, g: 0, b: 128, css: '#9c27b0' },
-        { name: 'ピンク系', r: 255, g: 192, b: 203, css: '#e91e63' },
-        { name: '茶色系', r: 165, g: 42, b: 42, css: '#795548' },
-        { name: '白・グレー系', r: 200, g: 200, b: 200, css: '#9e9e9e' },
-        { name: '黒系', r: 0, g: 0, b: 0, css: '#333333' }
-      ];
+      // 1. 判定用の設定（名前のみ利用、色相の範囲で判定するためRGB値は不要になります）
+const CATEGORIES = {
+  RED: '赤系',
+  ORANGE: 'オレンジ系',
+  YELLOW: '黄色系',
+  GREEN: '緑系',
+  CYAN: '水色系',
+  BLUE: '青系',
+  PURPLE: '紫系',
+  PINK: 'ピンク系',
+  BROWN: '茶色系',
+  GRAY: '白・グレー系',
+  BLACK: '黒系'
+};
 
-      // 2. カラーコード(#rrggbb)をRGBに変換して、一番近い系統を返す関数
-      function getColorCategory(hex) {
-        // #を取り除く
-        hex = hex.replace('#', '');
-        // R, G, B に分解
-        const r = parseInt(hex.substring(0, 2), 16);
-        const g = parseInt(hex.substring(2, 4), 16);
-        const b = parseInt(hex.substring(4, 6), 16);
+// グラフ表示用の色設定（ランキング表示用）
+const CATEGORY_CSS = {
+  [CATEGORIES.RED]: '#ff4d4d',
+  [CATEGORIES.ORANGE]: '#ffa500',
+  [CATEGORIES.YELLOW]: '#ffd700',
+  [CATEGORIES.GREEN]: '#4caf50',
+  [CATEGORIES.CYAN]: '#00bcd4',
+  [CATEGORIES.BLUE]: '#2196f3',
+  [CATEGORIES.PURPLE]: '#9c27b0',
+  [CATEGORIES.PINK]: '#e91e63',
+  [CATEGORIES.BROWN]: '#795548',
+  [CATEGORIES.GRAY]: '#9e9e9e',
+  [CATEGORIES.BLACK]: '#333333'
+};
 
-        let minDistance = Infinity;
-        let closestColor = null;
+// 2. HSVによる高度な色判定ロジック
+function getColorCategory(hex) {
+  hex = hex.replace('#', '');
+  const r = parseInt(hex.substring(0, 2), 16) / 255;
+  const g = parseInt(hex.substring(2, 4), 16) / 255;
+  const b = parseInt(hex.substring(4, 6), 16) / 255;
 
-        // すべての基準色と比較して、一番距離が近いものを探す
-        for (const base of BASE_COLORS) {
-          // 色の距離の計算（ユークリッド距離の簡易版）
-          const distance = Math.pow(r - base.r, 2) + Math.pow(g - base.g, 2) + Math.pow(b - base.b, 2);
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  const v = max; // 明度
+  const d = max - min;
+  const s = max === 0 ? 0 : d / max; // 彩度
+  let h; // 色相
 
-          if (distance < minDistance) {
-            minDistance = distance;
-            closestColor = base;
-          }
-        }
-        return closestColor;
-      }
+  if (max === min) {
+    h = 0; // アクロマティック（無彩色）
+  } else {
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+    h /= 6;
+  }
+
+  const hueDegrees = h * 360; // 0-360
+  const satPercent = s * 100; // 0-100
+  const valPercent = v * 100; // 0-100
+
+  // --- 判定アルゴリズム ---
+
+  // 1. 明度が極端に低い場合は「黒」
+  if (valPercent < 15) return { name: CATEGORIES.BLACK, css: CATEGORY_CSS[CATEGORIES.BLACK] };
+
+  // 2. 彩度が低い場合は「白・グレー」
+  if (satPercent < 15) return { name: CATEGORIES.GRAY, css: CATEGORY_CSS[CATEGORIES.GRAY] };
+
+  // 3. 茶色の判定（オレンジ付近で明度が低いもの）
+  if (hueDegrees >= 10 && hueDegrees < 45 && valPercent < 50) {
+    return { name: CATEGORIES.BROWN, css: CATEGORY_CSS[CATEGORIES.BROWN] };
+  }
+
+  // 4. 色相(Hue)による分類
+  let name = '';
+  if (hueDegrees < 20 || hueDegrees >= 340) name = CATEGORIES.RED;
+  else if (hueDegrees < 45) name = CATEGORIES.ORANGE;
+  else if (hueDegrees < 70) name = CATEGORIES.YELLOW;
+  else if (hueDegrees < 160) name = CATEGORIES.GREEN;
+  else if (hueDegrees < 200) name = CATEGORIES.CYAN;
+  else if (hueDegrees < 260) name = CATEGORIES.BLUE;
+  else if (hueDegrees < 300) name = CATEGORIES.PURPLE;
+  else name = CATEGORIES.PINK;
+
+  return { name: name, css: CATEGORY_CSS[name] };
+}
 
       // ログインチェック ＆ データ取得
       document.addEventListener('DOMContentLoaded', async () => {
