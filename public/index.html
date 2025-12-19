@@ -22,125 +22,182 @@
       }
     </style>
   </head>
+
   <body>
-    <h1>あなたの好きな色は？</h1>
-    <p>ユーザー: <span id="loginUser">...</span> (<a href="#" id="logout">ログアウト</a>)</p>
+    <div class="status-info">ユーザー: <span id="loginUser"></span> （<span id="logout">ログアウト</span>）</div>
 
-    <form id="colorForm">
-      <div class="input-group">
-        <p>色を選んでね：</p>
-        
-        <label>
-          <input type="color" id="colorPicker" name="color_picker" value="#0000ff" />
-          カラーピッカーで選択
-        </label>
-        
-        <br>
-        
-        <label style="margin-top: 10px; display: block;">
-          <input type="text" id="colorCodeInput" name="color_code" value="#0000ff" 
-                 placeholder="#RRGGBB 形式で入力" style="width: 150px;" maxlength="7" />
-          直接カラーコードを入力
-        </label>
-        
+    <section>
+      <div id="create">
+        <form>
+          <div class="row"><label>名前：</label><input name="name" /></div>
+          <div class="row">
+            <label>タイプ：</label>
+            <div class="radio">
+              <input type="radio" name="type" value="水" />水 &nbsp; <input type="radio" name="type" value="炎" />炎
+              &nbsp; <input type="radio" name="type" value="草" />草 &nbsp;
+              <input type="radio" name="type" value="氷" />氷 &nbsp; <input type="radio" name="type" value="悪" />悪
+            </div>
+          </div>
+          <div class="row"><label>レベル：</label><input type="number" name="level" /></div>
+          <div class="row"><label>愛称：</label><input name="nickname" /></div>
+          <div class="cap"><button type="submit">作成</button></div>
+        </form>
       </div>
 
-      <div class="input-group">
-        <p>理由やコメント：</p>
-        <input type="text" name="comment" placeholder="例：目が覚める色だから" style="width: 300px" />
+      <div style="text-align: left; margin: 10px 0">
+        <button id="refreshBtn" style="padding: 5px 15px; cursor: pointer">更新</button>
       </div>
 
-      <button type="submit">回答して一覧を見る</button>
-    </form>
+      <div id="display">
+        <table>
+          <caption>
+            ポケモン一覧
+          </caption>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>名前</th>
+              <th>タイプ</th>
+              <th>レベル</th>
+              <th>愛称</th>
+              <th>投稿者</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
 
-    <hr />
-    <p><a href="list.html">回答せずに一覧だけ見る</a></p>
-
-    <script>
-      // DOM要素の取得
-      const colorPicker = document.getElementById('colorPicker');
-      const colorCodeInput = document.getElementById('colorCodeInput');
-      const logoutLink = document.getElementById('logout');
-      const colorForm = document.getElementById('colorForm');
-
-      // ----------------------------------------------------
-      // 相互同期ロジック
-      // ----------------------------------------------------
-
-      // カラーピッカーの値が変更されたら、テキスト入力欄を更新
-      colorPicker.addEventListener('input', () => {
-          colorCodeInput.value = colorPicker.value.toUpperCase();
-      });
-
-      // テキスト入力欄の値が変更されたら、有効なHexコードであればカラーピッカーを更新
-      colorCodeInput.addEventListener('input', (e) => {
-          let value = e.target.value.trim().toUpperCase();
-
-          // Hexコード形式（#に続く6桁の英数字）か検証
-          if (/^#[0-9A-F]{6}$/.test(value)) {
-              colorPicker.value = value;
-          } 
-          // 有効なHex形式でない場合は、カラーピッカーは更新しない（無効な入力状態を許容）
-      });
-
-
-      // ----------------------------------------------------
-      // 既存の機能
-      // ----------------------------------------------------
-
-      // ログインチェック
-      document.addEventListener('DOMContentLoaded', async () => {
-        const res = await fetch('/api/check');
-        if (res.ok) {
-          const data = await res.json();
-          document.getElementById('loginUser').textContent = data.username;
-        } else {
-          location.href = 'login.html';
-        }
-      });
-
-      // ログアウト処理
-      logoutLink.addEventListener('click', async (e) => {
-        e.preventDefault();
-        await fetch('/api/logout', { method: 'POST' });
-        location.href = 'login.html';
-      });
-
-      // 送信処理 (変更あり)
-      colorForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        // 最終的に送信するカラーコードを決定
-        // 1. まずピッカーの値を初期値として採用
-        let finalColor = colorPicker.value.toUpperCase(); 
-
-        // 2. テキストボックスに入力された値が有効なHexコードであれば、そちらを優先
-        const inputValue = colorCodeInput.value.trim().toUpperCase();
-        if (/^#[0-9A-F]{6}$/.test(inputValue)) {
-            finalColor = inputValue;
-        }
-
-        const record = {
-          color: finalColor, // 決定された最終的なカラーコード
-          comment: document.querySelector('input[name="comment"]').value // コメントの値を取得
-        };
-
-        const body = new FormData();
-        body.append('record', JSON.stringify(record));
-
-        // 送信
-        const res = await fetch('/api/colors', {
-          method: 'POST',
-          body: body
-        });
-
-        if (res.ok) {
-          location.href = 'list.html';
-        } else {
-          alert('送信に失敗しました');
-        }
-      });
-      ///不可能
-    </script>
+    <div id="deleteAll">
+      <button>すべてのデータを削除</button>
+    </div>
   </body>
+
+  <script>
+    /* ポケモン一覧（table要素）を更新  */
+    async function updateTable() {
+      const tbody = document.querySelector('#display tbody');
+
+      // 更新中だとわかるように一旦文字を出す（任意）
+      // tbody.innerHTML = '<tr><td colspan="6">読み込み中...</td></tr>';
+
+      // レコードのリストを取得
+      const res = await fetch('/api/pokemons');
+
+      // 中身をクリア
+      tbody.innerHTML = '';
+
+      if (!res.ok) return;
+      const list = await res.json();
+
+      // tbody要素を更新
+      for (const record of list) {
+        const { id, name, type, level, nickname, author } = record;
+        const fields = [id, name, type, level, nickname, author];
+
+        // テーブルの更新
+        const tr = document.createElement('tr');
+        tbody.appendChild(tr);
+        for (const entry of fields) {
+          const td = document.createElement('td');
+          td.textContent = entry;
+          tr.appendChild(td);
+        }
+      }
+    }
+
+    /* ★追加：更新ボタンの動作 */
+    document.getElementById('refreshBtn').addEventListener('click', async () => {
+      await updateTable();
+      // ボタンを押したことがわかるようにちょっとログを出す（なくてもOK）
+      console.log('一覧を更新しました');
+    });
+
+    /* ページ読み込み時にログイン状態を確認 */
+    document.addEventListener('DOMContentLoaded', async () => {
+      // 確認
+      const res = await fetch('/api/check');
+
+      // ログインしていたらユーザー名を表示
+      if (res.ok) {
+        const data = await res.json();
+        const loginUser = document.getElementById('loginUser');
+        loginUser.textContent = `${data.username} さん`;
+        updateTable(); //  一覧表示
+      }
+      // ログインしていなければ1秒後に login.html にリダイレクト
+      else {
+        document.body.innerHTML = '<h1>ログインページに移動します</h1>';
+        setTimeout(function () {
+          location.href = 'login.html';
+        }, 1000); // 1秒後
+      }
+    });
+
+    /* ログアウト */
+    document.getElementById('logout').addEventListener('click', logout);
+    async function logout() {
+      const res = await fetch('/api/logout', { method: 'POST' });
+      if (res.ok) location.href = 'login.html';
+    }
+
+    /*** リソースを作成 ***/
+    document.querySelector('#create button').addEventListener('click', createData);
+    async function createData(ev) {
+      // form送信を停止
+      ev.preventDefault();
+
+      // フォーム入力の取得 → メッセージボディの作成
+      const form = document.querySelector('#create form');
+      const record = {
+        name: form.name.value,
+        type: form.type.value,
+        level: form.level.value,
+        nickname: form.nickname.value
+      };
+      for (const key in record) {
+        if (!record[key]) {
+          window.alert('すべての項目を入力してください。');
+          return;
+        }
+      }
+      const body = new FormData();
+      body.append('record', JSON.stringify(record));
+
+      // フォームをクリア
+      form.name.value = '';
+      form.type.value = false;
+      form.level.value = '';
+      form.nickname.value = '';
+
+      // POSTリクエスト
+      const res = await fetch('/api/pokemons', {
+        method: 'POST',
+        body: body
+      });
+
+      // レスポンスの確認
+      const created = await res.json();
+      if (res.ok) {
+        console.log(JSON.stringify(created, null, 2));
+      } else {
+        console.warn(created.message);
+        return;
+      }
+
+      // テーブルを更新
+      updateTable();
+    }
+
+    /* リソースをすべて削除 */
+    document.querySelector('#deleteAll button').addEventListener('click', deleteDataAll);
+    async function deleteDataAll() {
+      const res = await fetch('/api/pokemons', { method: 'DELETE' });
+      if (res.ok) {
+        updateTable();
+      } else {
+        console.warn('削除に失敗しました');
+      }
+    }
+  </script>
 </html>
