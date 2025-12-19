@@ -162,7 +162,7 @@ function getColorCategory(hex) {
   // --- 判定アルゴリズム ---
 
   // 1. 明度が極端に低い場合は「黒」
-  if (valPercent < 15) return { name: CATEGORIES.BLACK, css: CATEGORY_CSS[CATEGORIES.BLACK] };
+  if (valPercent < 35) return { name: CATEGORIES.BLACK, css: CATEGORY_CSS[CATEGORIES.BLACK] };
 
   // 2. 彩度が低い場合は「白・グレー」
   if (satPercent < 15) return { name: CATEGORIES.GRAY, css: CATEGORY_CSS[CATEGORIES.GRAY] };
