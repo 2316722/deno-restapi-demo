@@ -20,11 +20,28 @@
         border: none;
         background: none;
       }
+      #colorPreview {
+        width: 100%;
+        max-width: 300px;
+        height: 150px;
+        margin: 20px 0;
+        border: 3px solid #ccc;
+        border-radius: 10px;
+        background-color: #0000ff; /* 初期値 */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-weight: bold;
+        text-shadow: 1px 1px 2px #000;
+        font-size: 1.2rem;
+      }
     </style>
   </head>
   <body>
     <h1>あなたの好きな色は？</h1>
     <p>ユーザー: <span id="loginUser">...</span> (<a href="#" id="logout">ログアウト</a>)</p>
+    <div id="colorPreview">#0000FF</div>
 
     <form id="colorForm">
       <div class="input-group">
@@ -82,8 +99,31 @@
           } 
           // 有効なHex形式でない場合は、カラーピッカーは更新しない（無効な入力状態を許容）
       });
+       
+      const colorPreview = document.getElementById('colorPreview');
+      // カラーピッカーの値が変更されたら、テキストとプレビューを更新
+      colorPicker.addEventListener('input', () => {
+      const color = colorPicker.value.toUpperCase();
+      colorCodeInput.value = color;
+      updatePreview(color);
+    });
 
-
+  // テキスト入力欄の値が変更されたら、プレビューも更新
+    colorCodeInput.addEventListener('input', (e) => {
+        let value = e.target.value.trim().toUpperCase();
+        if (/^#[0-9A-F]{6}$/.test(value)) {
+          colorPicker.value = value;
+          updatePreview(value);
+       } 
+      });
+      // プレビューの色と文字を更新する関数
+      function updatePreview(color) {
+        colorPreview.style.backgroundColor = color;
+        colorPreview.textContent = color;
+      
+      // 背景が明るい色なら文字を黒にするなどの工夫も可能
+      // 今回はシンプルに色の表示のみ
+      }
       // ----------------------------------------------------
       // 既存の機能
       // ----------------------------------------------------
