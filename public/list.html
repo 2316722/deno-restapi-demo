@@ -174,7 +174,7 @@ function getColorCategory(hex) {
 
   // 4. 色相(Hue)による分類
   let name = '';
-  if (hueDegrees < 20 || hueDegrees >= 340) name = CATEGORIES.RED;
+  if (hueDegrees < 20 || hueDegrees >= 355) name = CATEGORIES.RED;
   else if (hueDegrees < 45) name = CATEGORIES.ORANGE;
   else if (hueDegrees < 70) name = CATEGORIES.YELLOW;
   else if (hueDegrees < 160) name = CATEGORIES.GREEN;
@@ -197,6 +197,13 @@ function getColorCategory(hex) {
         const res = await fetch('/api/colors');
         if (res.ok) {
           const list = await res.json();
+        
+        // --- 【ここから追加】カラーコードごとの出現回数を事前に集計 ---
+        const hexCounts = {};
+        list.forEach(item => {
+        const hex = item.color.toUpperCase(); // 大文字に統一してカウント
+        hexCounts[hex] = (hexCounts[hex] || 0) + 1;
+          });
 
           // --- 集計処理 ---
          // --- 1. 集計の準備 ---
@@ -225,6 +232,27 @@ function getColorCategory(hex) {
             `;
             tbody.appendChild(tr);
           });
+          const sameColorCount = hexCounts[item.color.toUpperCase()]; // 全体で何人いるか取得
+
+        const tr = document.createElement('tr');
+        const date = new Date(item.createdAt).toLocaleString();
+        tr.innerHTML = `
+        <td>${item.author}</td>
+        <td>
+          <div class="color-box" style="background-color: ${item.color};"></div>
+          <span>${item.color}</span>
+        </td>
+        <td>
+          <strong>${category.name}</strong><br>
+          <span style="font-size: 0.85em; color: #666;">
+            同じ色を選んだ人: ${sameColorCount}人
+          </span>
+        </td> 
+        <td>${item.comment || ''}</td>
+        <td style="font-size: 0.8em; color: gray;">${date}</td>
+        `;
+          tbody.appendChild(tr);
+       });
 
           // --- 3. ランキング表示の準備 ---
           const rankingList = document.getElementById('rankingList');
