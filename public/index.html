@@ -8,62 +8,65 @@
       body {
         padding: 15px;
         font-family: sans-serif;
-        max-width: 450px; /* 全体をスリムに */
+        max-width: 450px;
         margin: 0 auto;
         color: #333;
         line-height: 1.4;
+        background-color: #f8f9fa;
       }
-      h1 { text-align: center; margin-bottom: 15px; font-size: 1.4rem; }
+      h1 { text-align: center; margin-bottom: 15px; font-size: 1.4rem; color: #111; }
       .input-group {
         margin: 10px 0;
         padding: 12px;
-        border: 1px solid #eee;
-        border-radius: 8px;
+        border: 1px solid #ddd;
+        border-radius: 10px;
         background-color: #fff;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
       }
       input[type='color'] {
-        width: 40px;
-        height: 40px;
+        width: 44px;
+        height: 44px;
         cursor: pointer;
         border: none;
         background: none;
         vertical-align: middle;
       }
       input[type='text'], input[type='file'] {
-        padding: 6px;
+        padding: 8px;
         border: 1px solid #ccc;
-        border-radius: 4px;
+        border-radius: 6px;
         font-size: 0.9rem;
       }
       #colorPreview {
         width: 100%;
-        height: 80px; /* 高さを抑える */
+        height: 90px;
         margin: 10px 0;
-        border: 3px solid #fff;
-        box-shadow: 0 0 8px rgba(0,0,0,0.1);
-        border-radius: 10px;
+        border: 4px solid #fff;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        border-radius: 12px;
         background-color: #0000ff;
         display: flex;
-        flex-direction: column;
         align-items: center;
         justify-content: center;
         color: #fff;
         font-weight: bold;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-        font-size: 1.2rem;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+        font-size: 1.3rem;
+        transition: background-color 0.3s;
       }
 
-      /* 画像パレット・スポイト用のスタイル */
-      #imageSection { background-color: #fcfcfc; }
+      /* 画像パレット・スポイトエリア */
+      #imageSection { background-color: #fdfdfd; }
       .canvas-container {
         position: relative;
         margin-top: 10px;
-        border-radius: 6px;
+        border-radius: 8px;
         overflow: hidden;
-        border: 1px solid #ddd;
-        max-width: 250px; /* 画像の表示幅を制限 */
+        border: 1px solid #eee;
+        max-width: 280px; /* スマホで見やすいサイズ */
         margin-left: auto;
         margin-right: auto;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       }
       #imgPreviewCanvas {
         width: 100%;
@@ -72,52 +75,60 @@
       }
       .palette-container {
         display: flex;
-        gap: 8px;
-        margin: 10px 0;
+        gap: 10px;
+        margin: 12px 0;
         flex-wrap: wrap;
         justify-content: center;
       }
       .palette-btn {
-        width: 38px;
-        height: 38px;
+        width: 42px;
+        height: 42px;
         border-radius: 50%;
-        border: 2px solid #fff;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+        border: 3px solid #fff;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         cursor: pointer;
+        transition: transform 0.1s;
       }
+      .palette-btn:active { transform: scale(0.9); }
 
       #eyedropperBtn {
-        padding: 6px 12px;
+        padding: 6px 14px;
         cursor: pointer;
-        border-radius: 15px;
-        border: 1px solid #ccc;
-        background: #fff;
+        border-radius: 20px;
+        border: 1px solid #ddd;
+        background: #f8f9fa;
         font-size: 0.8em;
+        font-weight: bold;
+        transition: all 0.2s;
       }
       #eyedropperBtn.active {
         background: #ffeb3b;
         border-color: #fbc02d;
-        font-weight: bold;
+        color: #000;
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
       }
 
       button[type="submit"] {
         width: 100%;
-        padding: 12px;
-        background: #333;
+        padding: 14px;
+        background: #222;
         color: white;
         border: none;
-        border-radius: 8px;
+        border-radius: 10px;
         font-size: 1rem;
         font-weight: bold;
         cursor: pointer;
+        margin-top: 10px;
+        transition: background 0.2s;
       }
+      button[type="submit"]:active { background: #555; }
     </style>
   </head>
   <body>
-    <h1>好きな色を教えて！</h1>
-    <p style="text-align: right; font-size: 0.8em; margin: 0;">
-      <span id="loginUser">...</span> 
-      [<a href="#" id="logout" style="color: #666;">ログアウト</a>]
+    <h1>お気に入りの色を投稿</h1>
+    <p style="text-align: right; font-size: 0.85em; margin-bottom: 10px;">
+      <span id="loginUser" style="font-weight: bold;">...</span> さん 
+      [<a href="#" id="logout" style="color: #d32f2f; text-decoration: none;">ログアウト</a>]
     </p>
     
     <div id="colorPreview">
@@ -126,39 +137,42 @@
 
     <form id="colorForm">
       <div class="input-group">
-        <p style="margin: 0 0 8px 0; font-size: 0.9em;"><strong>🎨 ピッカーで選ぶ</strong></p>
-        <div style="display: flex; align-items: center; gap: 10px;">
+        <p style="margin: 0 0 10px 0; font-size: 0.9em; color: #666;">🎨 <strong>自分で選択</strong></p>
+        <div style="display: flex; align-items: center; gap: 12px;">
           <input type="color" id="colorPicker" value="#0000ff" />
-          <input type="text" id="colorCodeInput" value="#0000FF" maxlength="7" style="width: 80px;" />
+          <input type="text" id="colorCodeInput" value="#0000FF" maxlength="7" style="width: 100px; font-family: monospace;" />
         </div>
       </div>
 
       <div class="input-group" id="imageSection">
-        <p style="margin: 0 0 8px 0; font-size: 0.9em;"><strong>🖼️ 画像から作る</strong></p>
-        <input type="file" id="imageInput" accept="image/*" style="width: 100%; font-size: 0.8em;" />
+        <p style="margin: 0 0 10px 0; font-size: 0.9em; color: #666;">🖼️ <strong>画像から色を抽出</strong></p>
+        <input type="file" id="imageInput" accept="image/*" style="width: 100%;" />
         
         <div id="paletteArea" style="display: none;">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 10px;">
-            <span style="font-size: 0.75em; color: #666;">AIパレット</span>
-            <button type="button" id="eyedropperBtn">🔍 スポイト</button>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 15px;">
+            <span style="font-size: 0.75em; color: #888; font-weight: bold;">AIパレット</span>
+            <button type="button" id="eyedropperBtn">🔍 スポイトOFF</button>
           </div>
           <div class="palette-container" id="colorPalette"></div>
           <div class="canvas-container">
             <canvas id="imgPreviewCanvas"></canvas>
           </div>
+          <p style="text-align: center; font-size: 0.7em; color: #999; margin-top: 8px;">
+            画像をタップして色を選択できます
+          </p>
         </div>
       </div>
 
       <div class="input-group">
-        <p style="margin: 0 0 8px 0; font-size: 0.9em;"><strong>💬 コメント</strong></p>
-        <input type="text" name="comment" placeholder="例：好きな色！" style="width: 100%; box-sizing: border-box;" />
+        <p style="margin: 0 0 10px 0; font-size: 0.9em; color: #666;">💬 <strong>コメント</strong></p>
+        <input type="text" name="comment" placeholder="この色を選んだ理由は？" style="width: 100%; box-sizing: border-box;" />
       </div>
 
-      <button type="submit">送信して一覧を見る</button>
+      <button type="submit">この色で投稿する</button>
     </form>
 
-    <p style="text-align: center; margin-top: 15px; font-size: 0.9em;">
-      <a href="list.html" style="color: #666;">一覧だけ見る</a>
+    <p style="text-align: center; margin-top: 20px; font-size: 0.9em;">
+      <a href="list.html" style="color: #555; text-decoration: underline;">回答せずに一覧を見る</a>
     </p>
 
     <script>
@@ -178,6 +192,7 @@
 
       let isEyedropperActive = false;
 
+      // すべての表示を同期
       function updateAll(hex) {
         const color = hex.toUpperCase();
         colorPicker.value = color;
@@ -192,6 +207,7 @@
         if (/^#[0-9A-F]{6}$/.test(value)) updateAll(value);
       });
 
+      // 画像処理
       imageInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -199,10 +215,12 @@
         reader.onload = (event) => {
           const img = new Image();
           img.onload = () => {
-            const maxW = 400; // 内部解像度
-            canvas.width = maxW;
-            canvas.height = img.height * (maxW / img.width);
+            // スポイトの正確さとAIパレットの質を両立する解像度
+            const internalW = 500; 
+            canvas.width = internalW;
+            canvas.height = img.height * (internalW / img.width);
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            
             extractDiverseColors();
             paletteArea.style.display = 'block';
           };
@@ -211,22 +229,28 @@
         reader.readAsDataURL(file);
       });
 
+      // AIパレット抽出ロジック（遠い色を選ぶ）
       function extractDiverseColors() {
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
         const colorCounts = {};
-        for (let i = 0; i < imageData.length; i += 50) {
+        
+        // 密度を高めてスキャン(15ピクセルおき)
+        for (let i = 0; i < imageData.length; i += 60) {
           const r = imageData[i], g = imageData[i+1], b = imageData[i+2];
           const hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase()}`;
           colorCounts[hex] = (colorCounts[hex] || 0) + 1;
         }
+
         const sortedColors = Object.keys(colorCounts).sort((a, b) => colorCounts[b] - colorCounts[a]);
         const diversePalette = [];
+        const DISTANCE_LIMIT = 110; 
+
         for (const hex of sortedColors) {
           if (diversePalette.length >= 5) break;
           const isDistinct = diversePalette.every(sel => {
             const r1 = parseInt(hex.substring(1,3), 16), g1 = parseInt(hex.substring(3,5), 16), b1 = parseInt(hex.substring(5,7), 16);
             const r2 = parseInt(sel.substring(1,3), 16), g2 = parseInt(sel.substring(3,5), 16), b2 = parseInt(sel.substring(5,7), 16);
-            return (Math.abs(r1-r2) + Math.abs(g1-g2) + Math.abs(b1-b2)) > 100;
+            return (Math.abs(r1-r2) + Math.abs(g1-g2) + Math.abs(b1-b2)) > DISTANCE_LIMIT;
           });
           if (isDistinct) diversePalette.push(hex);
         }
@@ -244,27 +268,41 @@
         });
       }
 
+      // スポイトモード切り替え
       eyedropperBtn.addEventListener('click', () => {
         isEyedropperActive = !isEyedropperActive;
+        eyedropperBtn.textContent = isEyedropperActive ? "🔍 スポイトON" : "🔍 スポイトOFF";
         eyedropperBtn.classList.toggle('active', isEyedropperActive);
-        canvas.style.cursor = isEyedropperActive ? "crosshair" : "default";
       });
 
       function pickColor(e) {
         if (!isEyedropperActive) return;
         const rect = canvas.getBoundingClientRect();
+        // マウスとタッチの両方に対応
         const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
         const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+        
         const x = clientX - rect.left;
         const y = clientY - rect.top;
+        
+        // 表示サイズからCanvas内部座標に変換
         const canvasX = Math.floor(x * (canvas.width / rect.width));
         const canvasY = Math.floor(y * (canvas.height / rect.height));
+        
         const pixel = ctx.getImageData(canvasX, canvasY, 1, 1).data;
-        updateAll(`#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`);
+        const hex = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
+        updateAll(hex);
       }
-      canvas.addEventListener('mousedown', pickColor);
-      canvas.addEventListener('touchstart', (e) => { if(isEyedropperActive) { e.preventDefault(); pickColor(e); } }, {passive:false});
 
+      canvas.addEventListener('mousedown', pickColor);
+      canvas.addEventListener('touchstart', (e) => {
+        if(isEyedropperActive) {
+          e.preventDefault();
+          pickColor(e);
+        }
+      }, {passive: false});
+
+      // 既存の通信処理
       document.addEventListener('DOMContentLoaded', async () => {
         const res = await fetch('/api/check');
         if (res.ok) {
