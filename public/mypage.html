@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>マイページ</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #fafafa;
+      }
+      .visual-container {
+        height: 280px;
+        border-radius: 20px;
+        margin-bottom: 20px;
+        position: relative;
+        overflow: hidden;
+        background: #fff;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      }
+      .tab-menu {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 20px;
+        background: #eee;
+        padding: 5px;
+        border-radius: 30px;
+      }
+      .tab-menu button {
+        flex: 1;
+        padding: 10px;
+        border: none;
+        border-radius: 25px;
+        cursor: pointer;
+        background: transparent;
+        transition: 0.3s;
+      }
+      .tab-menu button.active {
+        background: white;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        font-weight: bold;
+      }
+      #view-tiles {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(35px, 1fr));
+        gap: 4px;
+        padding: 15px;
+      }
+      .tile {
+        aspect-ratio: 1;
+        border-radius: 3px;
+      }
+      #view-gradient,
+      #view-cloud {
+        width: 100%;
+        height: 100%;
+      }
+      .cloud-bubble {
+        position: absolute;
+        border-radius: 50%;
+        mix-blend-mode: overlay;
+        filter: blur(8px);
+        opacity: 0.8;
+      }
+      .section-title {
+        font-size: 1.1rem;
+        font-weight: bold;
+        margin: 25px 0 10px;
+        padding-bottom: 5px;
+        border-bottom: 2px solid #333;
+      }
+      .color-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .mini-card {
+        width: 65px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        overflow: hidden;
+        font-size: 10px;
+        padding-bottom: 5px;
+      }
+      .mini-color {
+        height: 45px;
+        width: 100%;
+        margin-bottom: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>👤 あなたのマイページ</h1>
+    <div class="tab-menu">
+      <button onclick="switchView('tiles')" id="btn-tiles" class="active">タイル</button>
+      <button onclick="switchView('gradient')" id="btn-gradient">グラデーション</button>
+      <button onclick="switchView('cloud')" id="btn-cloud">クラウド</button>
+    </div>
+    <div class="visual-container">
+      <div id="view-tiles" class="view"></div>
+      <div id="view-gradient" class="view" style="display: none"></div>
+      <div id="view-cloud" class="view" style="display: none"></div>
+    </div>
+    <div class="section-title">自分が投稿した色</div>
+    <div id="myPosts" class="color-list"></div>
+    <div class="section-title">お気に入り</div>
+    <div id="myFavorites" class="color-list"></div>
+    <p style="text-align: center; margin-top: 40px"><a href="list.html">← 一覧画面に戻る</a></p>
+
+    <script>
+      let myColors = [];
+      async function load() {
+        const res = await fetch('/api/me');
+        const data = await res.json();
+        myColors = data.myPosts.map((p) => p.color);
+        document.getElementById('myPosts').innerHTML = data.myPosts.map(renderMiniCard).join('');
+        document.getElementById('myFavorites').innerHTML = data.myFavorites.map(renderMiniCard).join('');
+        renderVisuals();
+      }
+      function renderMiniCard(item) {
+        return `<div class="mini-card"><div class="mini-color" style="background:${item.color}"></div>${item.color}</div>`;
+      }
+      function renderVisuals() {
+        document.getElementById('view-tiles').innerHTML = myColors
+          .map((c) => `<div class="tile" style="background:${c}"></div>`)
+          .join('');
+        if (myColors.length > 0) {
+          document.getElementById('view-gradient').style.background =
+            myColors.length > 1 ? `linear-gradient(135deg, ${myColors.join(',')})` : myColors[0];
+        }
+        const cloud = document.getElementById('view-cloud');
+        cloud.innerHTML = '';
+        myColors.forEach((c) => {
+          const b = document.createElement('div');
+          b.className = 'cloud-bubble';
+          const size = Math.random() * 120 + 60;
+          b.style.width = b.style.height = size + 'px';
+          b.style.background = c;
+          b.style.left = Math.random() * 80 + '%';
+          b.style.top = Math.random() * 60 + '%';
+          cloud.appendChild(b);
+        });
+      }
+      function switchView(t) {
+        document.querySelectorAll('.view').forEach((v) => (v.style.display = 'none'));
+        document.querySelectorAll('.tab-menu button').forEach((b) => b.classList.remove('active'));
+        document.getElementById(`view-${t}`).style.display = t === 'tiles' ? 'grid' : 'block';
+        document.getElementById(`btn-${t}`).classList.add('active');
+      }
+      load();
+    </script>
+  </body>
+</html>
