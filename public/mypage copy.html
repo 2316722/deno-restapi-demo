@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>マイページ</title>
-    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css" />
+    <title>マイページ（モード切り替え版）</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@iconscout/unicons@4.0.8/css/line.min.css" />
     <style>
       body {
         font-family: sans-serif;
@@ -13,8 +13,6 @@
         padding: 20px;
         background: #fafafa;
       }
-
-      /* ヘッダー・アコーディオン */
       .section-header {
         font-size: 1.1rem;
         font-weight: bold;
@@ -45,7 +43,6 @@
         transform: rotate(-90deg);
       }
 
-      /* カラーカード */
       .color-list {
         display: flex;
         flex-wrap: wrap;
@@ -68,16 +65,9 @@
       .mini-card.selected {
         border-color: #000;
         transform: scale(1.05);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-      }
-      .mini-color {
-        height: 50px;
-        width: 100%;
-        margin-bottom: 5px;
-        border-radius: 7px 7px 0 0;
       }
 
-      /* 物理タブの時の一瞬光るアニメーション */
+      /* 物理タブのときの一瞬光るアニメーション */
       @keyframes flash {
         0% {
           background: #fff;
@@ -97,6 +87,12 @@
         animation: flash 0.2s ease-out;
       }
 
+      .mini-color {
+        height: 50px;
+        width: 100%;
+        margin-bottom: 5px;
+        border-radius: 7px 7px 0 0;
+      }
       .selection-badge {
         position: absolute;
         top: -10px;
@@ -115,7 +111,6 @@
         z-index: 10;
       }
 
-      /* ビジュアル表示エリア */
       .visual-container {
         height: 320px;
         border-radius: 20px;
@@ -156,18 +151,12 @@
         left: 0;
         display: none;
       }
-      #view-gradient {
-        transition: background 0.5s;
-      }
       canvas {
         width: 100%;
         height: 100%;
         display: block;
         touch-action: none;
         cursor: grab;
-      }
-      canvas:active {
-        cursor: grabbing;
       }
 
       #reset-area {
@@ -182,7 +171,10 @@
         background: white;
         cursor: pointer;
         font-size: 12px;
-        display: none;
+        display: none; /* 初期は非表示 */
+      }
+      #btn-reset:hover {
+        background: #f0f0f0;
       }
 
       .hint {
@@ -203,17 +195,13 @@
       <span><i class="uil uil-edit"></i> 自分が投稿した色</span>
       <i class="uil uil-angle-down arrow-icon"></i>
     </div>
-    <div id="content-posts" class="accordion-content">
-      <div id="myPosts" class="color-list"></div>
-    </div>
+    <div id="content-posts" class="accordion-content"><div id="myPosts" class="color-list"></div></div>
 
     <div class="section-header" onclick="toggleSection('content-favs', this)">
-      <span><i class="uil uil-bookmark-full"></i> お気に入り</span>
+      <span><i class="uil uil-bookmark"></i> お気に入り</span>
       <i class="uil uil-angle-down arrow-icon"></i>
     </div>
-    <div id="content-favs" class="accordion-content">
-      <div id="myFavorites" class="color-list"></div>
-    </div>
+    <div id="content-favs" class="accordion-content"><div id="myFavorites" class="color-list"></div></div>
 
     <div class="section-header" onclick="toggleSection('content-visual', this)">
       <span><i class="uil uil-palette"></i> カラービジュアル</span>
@@ -233,7 +221,7 @@
       </div>
     </div>
 
-    <p style="text-align: center; margin-top: 40px"><a href="list.html">← 一覧画面に戻る</a></p>
+    <p style="text-align: center; margin-top: 20px"><a href="list.html">← 一覧画面に戻る</a></p>
 
     <script>
       let myColors = [];
@@ -243,25 +231,22 @@
       let animationId = null;
       let currentTab = 'gradient';
 
+      const testData = {
+        myPosts: [{ color: '#FF5733' }, { color: '#33FF57' }, { color: '#3357FF' }],
+        myFavorites: [{ color: '#F39C12' }, { color: '#9B59B6' }]
+      };
+
       async function load() {
-        try {
-          const res = await fetch('/api/me');
-          const data = await res.json();
-
-          myColors = data.myPosts.map((p) => p.color);
-          favoriteColors = data.myFavorites.map((f) => f.color);
-
-          document.getElementById('myPosts').innerHTML = data.myPosts
-            .map((p, i) => renderCard(p.color, `p-${i}`))
-            .join('');
-          document.getElementById('myFavorites').innerHTML = data.myFavorites
-            .map((f, i) => renderCard(f.color, `f-${i}`))
-            .join('');
-
-          renderVisuals();
-        } catch (e) {
-          console.error('データ取得エラー', e);
-        }
+        const data = testData;
+        myColors = data.myPosts.map((p) => p.color);
+        favoriteColors = data.myFavorites.map((f) => f.color);
+        document.getElementById('myPosts').innerHTML = data.myPosts
+          .map((p, i) => renderCard(p.color, `p-${i}`))
+          .join('');
+        document.getElementById('myFavorites').innerHTML = data.myFavorites
+          .map((f, i) => renderCard(f.color, `f-${i}`))
+          .join('');
+        renderVisuals();
       }
 
       function renderCard(color, id) {
@@ -272,6 +257,7 @@
         const el = document.getElementById(id);
 
         if (currentTab === 'gradient') {
+          // グラデーションタブ：選択・解除と番号表示
           const index = selectedList.findIndex((item) => item.id === id);
           if (index > -1) {
             selectedList.splice(index, 1);
@@ -283,9 +269,9 @@
           updateBadges();
           renderVisuals();
         } else {
-          // ボールタブ：光るエフェクトとボール追加
+          // ボールタブ：光るエフェクトとボール追加のみ
           el.classList.remove('flash-effect');
-          void el.offsetWidth;
+          void el.offsetWidth; // アニメーションを再トリガーするためのハック
           el.classList.add('flash-effect');
           addBall(color);
         }
@@ -293,6 +279,7 @@
 
       function updateBadges() {
         document.querySelectorAll('.selection-badge').forEach((b) => b.remove());
+        // グラデーションタブの時だけ番号を表示
         if (currentTab === 'gradient') {
           selectedList.forEach((item, i) => {
             const card = document.getElementById(item.id);
@@ -306,28 +293,18 @@
         }
       }
 
-      function renderVisuals() {
-        const gradEl = document.getElementById('view-gradient');
-        const displayColors = selectedList.map((s) => s.color);
-        if (displayColors.length > 0) {
-          gradEl.style.background =
-            displayColors.length > 1 ? `linear-gradient(135deg, ${displayColors.join(',')})` : displayColors[0];
-        } else {
-          const all = [...myColors, ...favoriteColors];
-          gradEl.style.background = all.length > 0 ? all[0] : '#ffffff';
-        }
-      }
-
       function switchView(type, e) {
         if (e) e.stopPropagation();
         currentTab = type;
         cancelAnimationFrame(animationId);
 
+        // UIの切り替え
         document.querySelectorAll('.view').forEach((v) => (v.style.display = 'none'));
         document.querySelectorAll('.tab-menu button').forEach((b) => b.classList.remove('active'));
         document.getElementById(`view-${type}`).style.display = 'block';
         document.getElementById(`btn-${type}`).classList.add('active');
 
+        // タブ固有の表示制御
         const resetBtn = document.getElementById('btn-reset');
         const hint = document.getElementById('mode-hint');
 
@@ -339,6 +316,7 @@
         } else {
           resetBtn.style.display = 'none';
           hint.innerText = 'グラデーションに使う色を選んでください。';
+          // グラデーションタブに戻った時は選択状態を復元
           selectedList.forEach((item) => {
             const card = document.getElementById(item.id);
             if (card) card.classList.add('selected');
@@ -347,11 +325,11 @@
         updateBadges();
       }
 
+      // --- 以下、前回までの物理エンジン・描画ロジック ---
       function addBall(color) {
         const canvas = document.getElementById('canvas-physics');
-        const w = canvas.width || 300;
         physicsBalls.push({
-          x: Math.random() * (w - 40) + 20,
+          x: Math.random() * (canvas.width - 40) + 20,
           y: -20,
           vx: (Math.random() - 0.5) * 10,
           vy: 5,
@@ -360,21 +338,30 @@
           isDragging: false
         });
       }
-
       function clearBalls() {
         physicsBalls = [];
       }
-
+      function renderVisuals() {
+        const gradEl = document.getElementById('view-gradient');
+        const displayColors = selectedList.map((s) => s.color);
+        if (displayColors.length > 0)
+          gradEl.style.background =
+            displayColors.length > 1 ? `linear-gradient(135deg, ${displayColors.join(',')})` : displayColors[0];
+        else gradEl.style.background = '#fff';
+      }
+      function toggleSection(contentId, header) {
+        const content = document.getElementById(contentId);
+        header.querySelector('.arrow-icon').classList.toggle('collapsed-icon');
+        content.classList.toggle('collapsed');
+      }
       function initPhysics() {
         const canvas = document.getElementById('canvas-physics');
         const ctx = canvas.getContext('2d');
         const rect = canvas.getBoundingClientRect();
         canvas.width = rect.width;
         canvas.height = rect.height;
-
         let mouse = { x: 0, y: 0, isDown: false };
         let draggedBall = null;
-
         canvas.onmousedown = (e) => {
           mouse.isDown = true;
           const r = canvas.getBoundingClientRect();
@@ -402,7 +389,6 @@
           draggedBall = null;
           mouse.isDown = false;
         };
-
         function loop() {
           ctx.clearRect(0, 0, canvas.width, canvas.height);
           for (let i = 0; i < physicsBalls.length; i++) {
@@ -467,13 +453,6 @@
         }
         loop();
       }
-
-      function toggleSection(contentId, header) {
-        const content = document.getElementById(contentId);
-        header.querySelector('.arrow-icon').classList.toggle('collapsed-icon');
-        content.classList.toggle('collapsed');
-      }
-
       load();
     </script>
   </body>
