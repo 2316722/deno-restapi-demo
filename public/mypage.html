@@ -94,43 +94,21 @@
         z-index: 10;
       }
 
+      /* グラデーション専用のコンテナ */
       .visual-container {
         height: 280px;
         border-radius: 20px;
-        margin-bottom: 30px;
+        margin: 20px 0 30px;
         overflow: hidden;
         background: #fff;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
       }
-      .tab-menu {
-        display: flex;
-        gap: 8px;
-        margin: 10px 0 15px;
-        background: #eee;
-        padding: 5px;
-        border-radius: 30px;
+      
+      #view-gradient { 
+        width: 100%; 
+        height: 100%; 
+        transition: background 0.5s; 
       }
-      .tab-menu button {
-        flex: 1;
-        padding: 10px;
-        border: none;
-        border-radius: 25px;
-        cursor: pointer;
-        background: transparent;
-      }
-      .tab-menu button.active {
-        background: white;
-        font-weight: bold;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-      }
-      #view-tiles {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
-        gap: 5px;
-        padding: 20px;
-      }
-      .tile { aspect-ratio: 1; border-radius: 4px; }
-      #view-gradient { width: 100%; height: 100%; transition: background 0.5s; }
       
       .hint {
         padding: 10px;
@@ -146,7 +124,7 @@
     <h1><i class="uil uil-user"></i> あなたのマイページ</h1>
 
     <div class="hint">
-      <i class="uil uil-mouse-alt"></i> 色をタップして「選択」してください。選んだ順に下のグラデーションが作られます。
+      <i class="uil uil-mouse-alt"></i> 色をタップして選択順にグラデーションを作成できます。
     </div>
 
     <div class="section-header" onclick="toggleSection('content-posts', this)">
@@ -166,17 +144,12 @@
     </div>
 
     <div class="section-header" onclick="toggleSection('content-visual', this)">
-      <span><i class="uil uil-palette"></i> カラービジュアル</span>
+      <span><i class="uil uil-palette"></i> グラデーション作成</span>
       <i class="uil uil-angle-down arrow-icon"></i>
     </div>
     <div id="content-visual" class="accordion-content">
-      <div class="tab-menu">
-        <button onclick="switchView('tiles', event)" id="btn-tiles" class="active">タイル表示</button>
-        <button onclick="switchView('gradient', event)" id="btn-gradient">グラデーション作成</button>
-      </div>
       <div class="visual-container">
-        <div id="view-tiles" class="view"></div>
-        <div id="view-gradient" class="view" style="display: none"></div>
+        <div id="view-gradient"></div>
       </div>
     </div>
 
@@ -242,24 +215,16 @@
       }
 
       function renderVisuals() {
-        const all = [...myColors, ...favoriteColors];
-        
-        // タイル（全色）
-        document.getElementById('view-tiles').innerHTML = all
-          .map(c => `<div class="tile" style="background:${c}"></div>`).join('');
-        
-        // グラデーション描画
         const gradEl = document.getElementById('view-gradient');
         
         if (selectedList.length > 0) {
-          // 色が選択されている場合：選択順にグラデーション
           const displayColors = selectedList.map(s => s.color);
           gradEl.style.background = displayColors.length > 1 
             ? `linear-gradient(135deg, ${displayColors.join(',')})` 
             : displayColors[0];
         } else {
-          // 【初期状態】何も選択されていない場合：全色混ぜるのではなく、最初の1色のみ表示
-          // もし色がない場合は白、ある場合は最初の色をデフォルトにする
+          // 初期状態：全色の合体ではなく、最初の1色を表示
+          const all = [...myColors, ...favoriteColors];
           const defaultColor = all.length > 0 ? all[0] : '#ffffff';
           gradEl.style.background = defaultColor;
         }
@@ -270,16 +235,6 @@
         const icon = header.querySelector('.arrow-icon');
         content.classList.toggle('collapsed');
         icon.classList.toggle('collapsed-icon');
-      }
-
-      function switchView(type, e) {
-        e.stopPropagation();
-        document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
-        document.querySelectorAll('.tab-menu button').forEach(b => b.classList.remove('active'));
-        
-        const target = document.getElementById(`view-${type}`);
-        target.style.display = (type === 'tiles') ? 'grid' : 'block';
-        document.getElementById(`btn-${type}`).classList.add('active');
       }
 
       load();
