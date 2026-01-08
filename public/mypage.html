@@ -48,7 +48,6 @@
         padding: 10px 0 20px;
       }
 
-      /* カラーカード */
       .mini-card {
         width: 70px;
         background: white;
@@ -64,7 +63,6 @@
         overflow: visible;
       }
       
-      /* 選択された時のスタイル */
       .mini-card.selected {
         border-color: #000;
         transform: scale(1.05);
@@ -78,7 +76,6 @@
         border-radius: 7px 7px 0 0;
       }
 
-      /* 順序バッジ */
       .selection-badge {
         position: absolute;
         top: -10px;
@@ -97,7 +94,6 @@
         z-index: 10;
       }
 
-      /* ビジュアル表示 */
       .visual-container {
         height: 280px;
         border-radius: 20px;
@@ -189,18 +185,16 @@
     <script>
       let myColors = [];
       let favoriteColors = [];
-      let selectedList = []; // {id, color}
+      let selectedList = []; 
 
       async function load() {
         try {
-          // デモ用。実際のパスに合わせてください
           const res = await fetch('/api/me');
           const data = await res.json();
           
           myColors = data.myPosts.map(p => p.color);
           favoriteColors = data.myFavorites.map(f => f.color);
           
-          // IDを付けてリスト表示（同じ色でも別々に選べるように）
           document.getElementById('myPosts').innerHTML = data.myPosts.map((p, i) => renderCard(p.color, `p-${i}`)).join('');
           document.getElementById('myFavorites').innerHTML = data.myFavorites.map((f, i) => renderCard(f.color, `f-${i}`)).join('');
           
@@ -218,17 +212,14 @@
           </div>`;
       }
 
-      // クリック時のメイン処理
       function handleSelect(id, color) {
         const el = document.getElementById(id);
         const index = selectedList.findIndex(item => item.id === id);
 
         if (index > -1) {
-          // 解除
           selectedList.splice(index, 1);
           el.classList.remove('selected');
         } else {
-          // 選択
           selectedList.push({ id, color });
           el.classList.add('selected');
         }
@@ -238,9 +229,7 @@
       }
 
       function updateBadges() {
-        // 全てのバッジを削除
         document.querySelectorAll('.selection-badge').forEach(b => b.remove());
-        // 選択リストの順に再配置
         selectedList.forEach((item, i) => {
           const card = document.getElementById(item.id);
           if (card) {
@@ -259,14 +248,20 @@
         document.getElementById('view-tiles').innerHTML = all
           .map(c => `<div class="tile" style="background:${c}"></div>`).join('');
         
-        // グラデーション（選択優先）
+        // グラデーション描画
         const gradEl = document.getElementById('view-gradient');
-        const displayColors = selectedList.length > 0 ? selectedList.map(s => s.color) : all;
-
-        if (displayColors.length > 0) {
+        
+        if (selectedList.length > 0) {
+          // 色が選択されている場合：選択順にグラデーション
+          const displayColors = selectedList.map(s => s.color);
           gradEl.style.background = displayColors.length > 1 
             ? `linear-gradient(135deg, ${displayColors.join(',')})` 
             : displayColors[0];
+        } else {
+          // 【初期状態】何も選択されていない場合：全色混ぜるのではなく、最初の1色のみ表示
+          // もし色がない場合は白、ある場合は最初の色をデフォルトにする
+          const defaultColor = all.length > 0 ? all[0] : '#ffffff';
+          gradEl.style.background = defaultColor;
         }
       }
 
