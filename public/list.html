@@ -164,32 +164,37 @@
         const tbody = document.getElementById('listBody');
         tbody.innerHTML = '';
 
-        // 3. テーブルの描画と系統別カウント
+        // --- 3. テーブルの描画と系統別カウント ---
         list.forEach((item) => {
-          const category = getColorCategory(item.color);
-          if (counts[category.name] !== undefined) counts[category.name]++;
+        const category = getColorCategory(item.color);
+        if (counts[category.name] !== undefined) counts[category.name]++;
 
-          const sameColorCount = hexCounts[item.color.toUpperCase()];
-          const date = new Date(item.createdAt).toLocaleString();
-          
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${item.author}</td>
-            <td>
-              <div class="color-box" style="background-color: ${item.color};"></div>
-              <span>${item.color}</span>
-            </td>
-            <td>
-              <strong>${category.name}</strong><br>
-              <span style="font-size: 0.85em; color: #666;">
-                同じ色を選んだ人: ${sameColorCount}人
-              </span>
-            </td> 
-            <td>${item.comment || ''}</td>
-            <td style="font-size: 0.8em; color: gray;">${date}</td>
-          `;
-          tbody.appendChild(tr);
-        });
+        // 全体のカウントから自分（1人）を引く
+        const totalSameColor = hexCounts[item.color.toUpperCase()];
+        const otherPeopleCount = totalSameColor - 1; 
+
+        const date = new Date(item.createdAt).toLocaleString();
+  
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${item.author}</td>
+          <td>
+            <div class="color-box" style="background-color: ${item.color};"></div>
+            <span>${item.color}</span>
+          </td>
+          <td>
+            <strong>${category.name}</strong><br>
+            <span style="font-size: 0.85em; color: #666;">
+             ${otherPeopleCount > 0 
+                ? `他に同じ色を選んだ人: ${otherPeopleCount}人` 
+               : '同じ色を選んだ人は他にいません'}
+            </span>
+          </td> 
+          <td>${item.comment || ''}</td>
+          <td style="font-size: 0.8em; color: gray;">${date}</td>
+        `;
+        tbody.appendChild(tr);
+    });
 
         // 4. ランキング表示
         const rankingList = document.getElementById('rankingList');
