@@ -13,7 +13,9 @@
         padding: 20px;
         background: #fafafa;
       }
-      .section-title {
+
+      /* アコーディオンヘッダー */
+      .section-header {
         font-size: 1.1rem;
         font-weight: bold;
         margin: 25px 0 10px;
@@ -21,19 +23,45 @@
         border-bottom: 2px solid #333;
         display: flex;
         align-items: center;
-        gap: 8px;
-        justify-content: space-between; /* 両端に配置 */
+        justify-content: space-between;
+        cursor: pointer; /* クリック可能であることを示す */
+        user-select: none;
       }
       .title-label {
         display: flex;
         align-items: center;
         gap: 8px;
       }
+      .arrow-icon {
+        transition: transform 0.3s;
+        font-size: 1.2rem;
+      }
+
+      /* コンテンツの開閉制御 */
+      .accordion-content {
+        overflow: hidden;
+        transition: max-height 0.3s ease-out, opacity 0.2s, margin 0.3s;
+        max-height: 1000px; /* 十分な高さ */
+        opacity: 1;
+      }
+      /* 閉じている状態 */
+      .accordion-content.collapsed {
+        max-height: 0;
+        opacity: 0;
+        margin-top: 0;
+        margin-bottom: 0;
+        pointer-events: none;
+      }
+      /* 閉じている時のアイコンの向き */
+      .collapsed-icon {
+        transform: rotate(-90deg);
+      }
+
       .color-list {
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
-        margin-bottom: 20px;
+        padding: 10px 0;
       }
       .mini-card {
         width: 65px;
@@ -51,42 +79,7 @@
         margin-bottom: 5px;
       }
 
-      /* ビジュアルエリア */
-      .visual-section {
-        margin-top: 40px;
-        padding-top: 10px;
-        border-top: 1px solid #ddd;
-      }
-      
-      /* 折りたたみ制御用のクラス */
-      #visual-content {
-        overflow: hidden;
-        transition: max-height 0.3s ease-out, opacity 0.2s;
-        max-height: 500px; /* 十分な高さ */
-        opacity: 1;
-      }
-      #visual-content.collapsed {
-        max-height: 0;
-        opacity: 0;
-        margin-bottom: 0;
-      }
-
-      .toggle-btn {
-        background: #eee;
-        border: none;
-        border-radius: 15px;
-        padding: 2px 12px;
-        font-size: 0.8rem;
-        cursor: pointer;
-        color: #666;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-      }
-      .toggle-btn:hover {
-        background: #e0e0e0;
-      }
-
+      /* ビジュアル表示エリア */
       .visual-container {
         height: 280px;
         border-radius: 20px;
@@ -138,35 +131,34 @@
   <body>
     <h1><i class="uil uil-user"></i> あなたのマイページ</h1>
 
-    <div class="section-title">
+    <div class="section-header" onclick="toggleSection('content-posts', this)">
       <div class="title-label"><i class="uil uil-edit"></i> 自分が投稿した色</div>
+      <i class="uil uil-angle-down arrow-icon"></i>
     </div>
-    <div id="myPosts" class="color-list"></div>
+    <div id="content-posts" class="accordion-content">
+      <div id="myPosts" class="color-list"></div>
+    </div>
 
-    <div class="section-title">
+    <div class="section-header" onclick="toggleSection('content-favs', this)">
       <div class="title-label"><i class="uil uil-bookmark-full"></i> お気に入り</div>
+      <i class="uil uil-angle-down arrow-icon"></i>
     </div>
-    <div id="myFavorites" class="color-list"></div>
+    <div id="content-favs" class="accordion-content">
+      <div id="myFavorites" class="color-list"></div>
+    </div>
 
-    <div class="visual-section">
-      <div class="section-title" style="border-bottom: none;">
-        <div class="title-label"><i class="uil uil-palette"></i> カラービジュアル</div>
-        <button class="toggle-btn" onclick="toggleVisual()">
-          <span id="toggle-text">閉じる</span>
-          <i id="toggle-icon" class="uil uil-angle-up"></i>
-        </button>
+    <div class="section-header" onclick="toggleSection('content-visual', this)">
+      <div class="title-label"><i class="uil uil-palette"></i> カラービジュアル</div>
+      <i class="uil uil-angle-down arrow-icon"></i>
+    </div>
+    <div id="content-visual" class="accordion-content">
+      <div class="tab-menu">
+        <button onclick="switchView('tiles', event)" id="btn-tiles" class="active">タイル表示</button>
+        <button onclick="switchView('gradient', event)" id="btn-gradient">グラデーション表示</button>
       </div>
-
-      <div id="visual-content">
-        <div class="tab-menu">
-          <button onclick="switchView('tiles')" id="btn-tiles" class="active">タイル表示</button>
-          <button onclick="switchView('gradient')" id="btn-gradient">グラデーション表示</button>
-        </div>
-
-        <div class="visual-container">
-          <div id="view-tiles" class="view"></div>
-          <div id="view-gradient" class="view" style="display: none"></div>
-        </div>
+      <div class="visual-container">
+        <div id="view-tiles" class="view"></div>
+        <div id="view-gradient" class="view" style="display: none"></div>
       </div>
     </div>
 
@@ -202,29 +194,24 @@
         }
       }
 
-      function switchView(t) {
+      // セクション開閉の切り替え
+      function toggleSection(contentId, headerElement) {
+        const content = document.getElementById(contentId);
+        const icon = headerElement.querySelector('.arrow-icon');
+        
+        content.classList.toggle('collapsed');
+        icon.classList.toggle('collapsed-icon');
+      }
+
+      function switchView(t, event) {
+        // ボタンクリック時にアコーディオンが閉じてしまうのを防ぐ
+        event.stopPropagation();
+        
         document.querySelectorAll('.view').forEach((v) => (v.style.display = 'none'));
         document.querySelectorAll('.tab-menu button').forEach((b) => b.classList.remove('active'));
         const targetView = document.getElementById(`view-${t}`);
         targetView.style.display = t === 'tiles' ? 'grid' : 'block';
         document.getElementById(`btn-${t}`).classList.add('active');
-      }
-
-      // 開閉の切り替え
-      function toggleVisual() {
-        const content = document.getElementById('visual-content');
-        const text = document.getElementById('toggle-text');
-        const icon = document.getElementById('toggle-icon');
-        
-        content.classList.toggle('collapsed');
-        
-        if (content.classList.contains('collapsed')) {
-          text.innerText = "表示する";
-          icon.className = "uil uil-angle-down";
-        } else {
-          text.innerText = "閉じる";
-          icon.className = "uil uil-angle-up";
-        }
       }
 
       load();
