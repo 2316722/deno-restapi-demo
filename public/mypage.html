@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>マイページ</title>
+    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css" />
     <style>
       body {
         font-family: sans-serif;
@@ -71,6 +72,9 @@
         margin: 25px 0 10px;
         padding-bottom: 5px;
         border-bottom: 2px solid #333;
+        display: flex;
+        align-items: center;
+        gap: 8px;
       }
       .color-list {
         display: flex;
@@ -96,20 +100,25 @@
   </head>
   <body>
     <h1>👤 あなたのマイページ</h1>
+
     <div class="tab-menu">
       <button onclick="switchView('tiles')" id="btn-tiles" class="active">タイル</button>
       <button onclick="switchView('gradient')" id="btn-gradient">グラデーション</button>
       <button onclick="switchView('cloud')" id="btn-cloud">クラウド</button>
     </div>
+
     <div class="visual-container">
       <div id="view-tiles" class="view"></div>
       <div id="view-gradient" class="view" style="display: none"></div>
       <div id="view-cloud" class="view" style="display: none"></div>
     </div>
-    <div class="section-title">自分が投稿した色</div>
+
+    <div class="section-title"><i class="uil uil-edit"></i> 自分が投稿した色</div>
     <div id="myPosts" class="color-list"></div>
-    <div class="section-title">お気に入り</div>
+
+    <div class="section-title"><i class="uil uil-book"></i> お気に入り</div>
     <div id="myFavorites" class="color-list"></div>
+
     <p style="text-align: center; margin-top: 40px"><a href="list.html">← 一覧画面に戻る</a></p>
 
     <script>
