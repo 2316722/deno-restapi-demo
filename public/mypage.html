@@ -14,7 +14,7 @@
         background: #fafafa;
       }
 
-      /* アコーディオンヘッダー */
+      /* アコーディオンヘッダー共通 */
       .section-header {
         font-size: 1.1rem;
         font-weight: bold;
@@ -24,7 +24,7 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        cursor: pointer; /* クリック可能であることを示す */
+        cursor: pointer;
         user-select: none;
       }
       .title-label {
@@ -33,35 +33,33 @@
         gap: 8px;
       }
       .arrow-icon {
-        transition: transform 0.3s;
+        transition: transform 0.3s ease;
         font-size: 1.2rem;
       }
 
       /* コンテンツの開閉制御 */
       .accordion-content {
         overflow: hidden;
-        transition: max-height 0.3s ease-out, opacity 0.2s, margin 0.3s;
-        max-height: 1000px; /* 十分な高さ */
+        transition: max-height 0.4s ease-out, opacity 0.3s;
+        max-height: 1200px; /* 十分な高さ */
         opacity: 1;
       }
-      /* 閉じている状態 */
       .accordion-content.collapsed {
         max-height: 0;
         opacity: 0;
-        margin-top: 0;
-        margin-bottom: 0;
         pointer-events: none;
       }
-      /* 閉じている時のアイコンの向き */
+      /* 閉じている時はアイコンを90度回転させて「▶」にする */
       .collapsed-icon {
         transform: rotate(-90deg);
       }
 
+      /* リスト表示スタイル */
       .color-list {
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
-        padding: 10px 0;
+        padding: 10px 0 20px;
       }
       .mini-card {
         width: 65px;
@@ -79,11 +77,11 @@
         margin-bottom: 5px;
       }
 
-      /* ビジュアル表示エリア */
+      /* ビジュアル表示エリア（一番下） */
       .visual-container {
         height: 280px;
         border-radius: 20px;
-        margin-bottom: 20px;
+        margin-bottom: 30px;
         position: relative;
         overflow: hidden;
         background: #fff;
@@ -92,14 +90,14 @@
       .tab-menu {
         display: flex;
         gap: 8px;
-        margin: 15px 0;
+        margin: 10px 0 15px;
         background: #eee;
         padding: 5px;
         border-radius: 30px;
       }
       .tab-menu button {
         flex: 1;
-        padding: 8px;
+        padding: 10px;
         border: none;
         border-radius: 25px;
         cursor: pointer;
@@ -166,17 +164,24 @@
 
     <script>
       let myColors = [];
+      let favoriteColors = [];
 
       async function load() {
         try {
           const res = await fetch('/api/me');
           const data = await res.json();
+          
+          // データの格納
           myColors = data.myPosts.map((p) => p.color);
+          favoriteColors = data.myFavorites.map((f) => f.color);
+          
+          // リストの描画
           document.getElementById('myPosts').innerHTML = data.myPosts.map(renderMiniCard).join('');
           document.getElementById('myFavorites').innerHTML = data.myFavorites.map(renderMiniCard).join('');
+          
           renderVisuals();
         } catch (e) {
-          console.error("データの読み込みに失敗しました");
+          console.error("データの取得に失敗しました");
         }
       }
 
@@ -185,16 +190,24 @@
       }
 
       function renderVisuals() {
-        document.getElementById('view-tiles').innerHTML = myColors
+        // 投稿した色とお気に入りの色を合体させる
+        const allColors = [...myColors, ...favoriteColors];
+        
+        // タイル描画（合体リストを使用）
+        document.getElementById('view-tiles').innerHTML = allColors
           .map((c) => `<div class="tile" style="background:${c}"></div>`)
           .join('');
-        if (myColors.length > 0) {
+        
+        // グラデーション描画（合体リストを使用）
+        if (allColors.length > 0) {
           document.getElementById('view-gradient').style.background =
-            myColors.length > 1 ? `linear-gradient(135deg, ${myColors.join(',')})` : myColors[0];
+            allColors.length > 1 
+              ? `linear-gradient(135deg, ${allColors.join(',')})` 
+              : allColors[0];
         }
       }
 
-      // セクション開閉の切り替え
+      // アコーディオン開閉ロジック
       function toggleSection(contentId, headerElement) {
         const content = document.getElementById(contentId);
         const icon = headerElement.querySelector('.arrow-icon');
@@ -203,12 +216,14 @@
         icon.classList.toggle('collapsed-icon');
       }
 
+      // タブ切り替えロジック
       function switchView(t, event) {
-        // ボタンクリック時にアコーディオンが閉じてしまうのを防ぐ
-        event.stopPropagation();
+        // ヘッダーのonclickイベント（アコーディオン閉鎖）が発動しないようにする
+        if(event) event.stopPropagation();
         
         document.querySelectorAll('.view').forEach((v) => (v.style.display = 'none'));
         document.querySelectorAll('.tab-menu button').forEach((b) => b.classList.remove('active'));
+        
         const targetView = document.getElementById(`view-${t}`);
         targetView.style.display = t === 'tiles' ? 'grid' : 'block';
         document.getElementById(`btn-${t}`).classList.add('active');
