@@ -14,7 +14,6 @@
         background: #fafafa;
       }
 
-      /* アコーディオンヘッダー */
       .section-header {
         font-size: 1.1rem;
         font-weight: bold;
@@ -26,15 +25,6 @@
         justify-content: space-between;
         cursor: pointer;
         user-select: none;
-      }
-      .title-label {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-      .arrow-icon {
-        transition: transform 0.3s ease;
-        font-size: 1.2rem;
       }
 
       .accordion-content {
@@ -48,70 +38,70 @@
         opacity: 0;
         pointer-events: none;
       }
-      .collapsed-icon {
-        transform: rotate(-90deg);
-      }
+      .arrow-icon { transition: transform 0.3s; }
+      .collapsed-icon { transform: rotate(-90deg); }
 
       .color-list {
         display: flex;
         flex-wrap: wrap;
-        gap: 12px;
+        gap: 15px;
         padding: 10px 0 20px;
       }
 
       /* カラーカード */
       .mini-card {
-        width: 65px;
+        width: 70px;
         background: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         text-align: center;
-        overflow: visible; /* バッジ表示のため */
         font-size: 10px;
-        padding-bottom: 5px;
+        padding-bottom: 8px;
         cursor: pointer;
-        transition: all 0.2s;
-        border: 2px solid transparent;
+        transition: all 0.2s ease;
+        border: 3px solid transparent;
         position: relative;
+        overflow: visible;
       }
+      
+      /* 選択された時のスタイル */
       .mini-card.selected {
-        border-color: #333;
+        border-color: #000;
         transform: scale(1.05);
-        background: #fff;
-        z-index: 5;
-      }
-      .mini-color {
-        height: 45px;
-        width: 100%;
-        margin-bottom: 5px;
-        border-radius: 6px 6px 0 0;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
       }
 
-      /* 選択順バッジ */
+      .mini-color {
+        height: 50px;
+        width: 100%;
+        margin-bottom: 5px;
+        border-radius: 7px 7px 0 0;
+      }
+
+      /* 順序バッジ */
       .selection-badge {
         position: absolute;
-        top: -8px;
-        right: -8px;
-        background: #333;
-        color: white;
-        width: 20px;
-        height: 20px;
+        top: -10px;
+        right: -10px;
+        background: #000;
+        color: #fff;
+        width: 22px;
+        height: 22px;
         border-radius: 50%;
-        font-size: 11px;
+        font-size: 12px;
         font-weight: bold;
         display: flex;
         align-items: center;
         justify-content: center;
-        border: 2px solid white;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        border: 2px solid #fff;
+        z-index: 10;
       }
 
-      /* ビジュアルエリア */
+      /* ビジュアル表示 */
       .visual-container {
         height: 280px;
         border-radius: 20px;
         margin-bottom: 30px;
-        position: relative;
         overflow: hidden;
         background: #fff;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
@@ -131,49 +121,40 @@
         border-radius: 25px;
         cursor: pointer;
         background: transparent;
-        transition: 0.3s;
-        font-size: 0.9rem;
       }
       .tab-menu button.active {
         background: white;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         font-weight: bold;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
       }
       #view-tiles {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(35px, 1fr));
-        gap: 4px;
-        padding: 15px;
+        grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+        gap: 5px;
+        padding: 20px;
       }
-      .tile {
-        aspect-ratio: 1;
-        border-radius: 3px;
-      }
-      #view-gradient {
-        width: 100%;
-        height: 100%;
-        transition: background 0.5s ease;
-      }
-      .selection-hint {
-        font-size: 0.8rem;
-        color: #666;
-        margin-bottom: 10px;
-        background: #fff9c4;
-        padding: 8px;
+      .tile { aspect-ratio: 1; border-radius: 4px; }
+      #view-gradient { width: 100%; height: 100%; transition: background 0.5s; }
+      
+      .hint {
+        padding: 10px;
+        background: #e3f2fd;
         border-radius: 8px;
-        display: inline-block;
+        font-size: 0.85rem;
+        margin-bottom: 15px;
+        color: #1976d2;
       }
     </style>
   </head>
   <body>
     <h1><i class="uil uil-user"></i> あなたのマイページ</h1>
 
-    <div class="selection-hint">
-      <i class="uil uil-info-circle"></i> 好きな順に色をタップして自分だけのグラデーションを作れます
+    <div class="hint">
+      <i class="uil uil-mouse-alt"></i> 色をタップして「選択」してください。選んだ順に下のグラデーションが作られます。
     </div>
 
     <div class="section-header" onclick="toggleSection('content-posts', this)">
-      <div class="title-label"><i class="uil uil-edit"></i> 自分が投稿した色</div>
+      <span><i class="uil uil-edit"></i> 自分が投稿した色</span>
       <i class="uil uil-angle-down arrow-icon"></i>
     </div>
     <div id="content-posts" class="accordion-content">
@@ -181,7 +162,7 @@
     </div>
 
     <div class="section-header" onclick="toggleSection('content-favs', this)">
-      <div class="title-label"><i class="uil uil-bookmark-full"></i> お気に入り</div>
+      <span><i class="uil uil-bookmark-full"></i> お気に入り</span>
       <i class="uil uil-angle-down arrow-icon"></i>
     </div>
     <div id="content-favs" class="accordion-content">
@@ -189,7 +170,7 @@
     </div>
 
     <div class="section-header" onclick="toggleSection('content-visual', this)">
-      <div class="title-label"><i class="uil uil-palette"></i> カラービジュアル</div>
+      <span><i class="uil uil-palette"></i> カラービジュアル</span>
       <i class="uil uil-angle-down arrow-icon"></i>
     </div>
     <div id="content-visual" class="accordion-content">
@@ -208,62 +189,62 @@
     <script>
       let myColors = [];
       let favoriteColors = [];
-      let selectedColors = []; // {id: string, color: string} の形式で順序を保持
+      let selectedList = []; // {id, color}
 
       async function load() {
         try {
+          // デモ用。実際のパスに合わせてください
           const res = await fetch('/api/me');
           const data = await res.json();
           
           myColors = data.myPosts.map(p => p.color);
           favoriteColors = data.myFavorites.map(f => f.color);
           
-          // IDを付与してレンダリング（同じ色があっても区別できるようにする）
-          document.getElementById('myPosts').innerHTML = data.myPosts.map((item, i) => renderMiniCard(item, `post-${i}`)).join('');
-          document.getElementById('myFavorites').innerHTML = data.myFavorites.map((item, i) => renderMiniCard(item, `fav-${i}`)).join('');
+          // IDを付けてリスト表示（同じ色でも別々に選べるように）
+          document.getElementById('myPosts').innerHTML = data.myPosts.map((p, i) => renderCard(p.color, `p-${i}`)).join('');
+          document.getElementById('myFavorites').innerHTML = data.myFavorites.map((f, i) => renderCard(f.color, `f-${i}`)).join('');
           
           renderVisuals();
         } catch (e) {
-          console.error("データの取得に失敗しました");
+          console.error("データ取得エラー", e);
         }
       }
 
-      function renderMiniCard(item, uniqueId) {
+      function renderCard(color, id) {
         return `
-          <div class="mini-card" data-id="${uniqueId}" data-color="${item.color}" onclick="toggleColorSelection('${uniqueId}', '${item.color}', this)">
-            <div class="mini-color" style="background:${item.color}"></div>
-            ${item.color}
+          <div class="mini-card" id="${id}" onclick="handleSelect('${id}', '${color}')">
+            <div class="mini-color" style="background:${color}"></div>
+            ${color}
           </div>`;
       }
 
-      // 色の選択・解除と順番の管理
-      function toggleColorSelection(id, color, element) {
-        const index = selectedColors.findIndex(c => c.id === id);
-        
+      // クリック時のメイン処理
+      function handleSelect(id, color) {
+        const el = document.getElementById(id);
+        const index = selectedList.findIndex(item => item.id === id);
+
         if (index > -1) {
-          // すでに選ばれているなら解除
-          selectedColors.splice(index, 1);
-          element.classList.remove('selected');
+          // 解除
+          selectedList.splice(index, 1);
+          el.classList.remove('selected');
         } else {
-          // 新しく追加
-          selectedColors.push({ id, color });
-          element.classList.add('selected');
+          // 選択
+          selectedList.push({ id, color });
+          el.classList.add('selected');
         }
-        
+
         updateBadges();
         renderVisuals();
       }
 
-      // 順序バッジの更新
       function updateBadges() {
-        // 全てのバッジを一旦消去
+        // 全てのバッジを削除
         document.querySelectorAll('.selection-badge').forEach(b => b.remove());
-        
-        // selectedColorsの順番通りにバッジを再描画
-        selectedColors.forEach((item, i) => {
-          const card = document.querySelector(`.mini-card[data-id="${item.id}"]`);
+        // 選択リストの順に再配置
+        selectedList.forEach((item, i) => {
+          const card = document.getElementById(item.id);
           if (card) {
-            const badge = document.createElement('span');
+            const badge = document.createElement('div');
             badge.className = 'selection-badge';
             badge.innerText = i + 1;
             card.appendChild(badge);
@@ -272,42 +253,38 @@
       }
 
       function renderVisuals() {
-        const allColors = [...myColors, ...favoriteColors];
+        const all = [...myColors, ...favoriteColors];
         
-        // タイル描画
-        document.getElementById('view-tiles').innerHTML = allColors
-          .map((c) => `<div class="tile" style="background:${c}"></div>`)
-          .join('');
+        // タイル（全色）
+        document.getElementById('view-tiles').innerHTML = all
+          .map(c => `<div class="tile" style="background:${c}"></div>`).join('');
         
-        // グラデーション描画
-        const gradView = document.getElementById('view-gradient');
-        // 選択された色があればその順、なければ全色
-        const gradientList = selectedColors.length > 0 
-          ? selectedColors.map(c => c.color) 
-          : allColors;
+        // グラデーション（選択優先）
+        const gradEl = document.getElementById('view-gradient');
+        const displayColors = selectedList.length > 0 ? selectedList.map(s => s.color) : all;
 
-        if (gradientList.length > 0) {
-          gradView.style.background =
-            gradientList.length > 1 
-              ? `linear-gradient(135deg, ${gradientList.join(',')})` 
-              : gradientList[0];
+        if (displayColors.length > 0) {
+          gradEl.style.background = displayColors.length > 1 
+            ? `linear-gradient(135deg, ${displayColors.join(',')})` 
+            : displayColors[0];
         }
       }
 
-      function toggleSection(contentId, headerElement) {
+      function toggleSection(contentId, header) {
         const content = document.getElementById(contentId);
-        const icon = headerElement.querySelector('.arrow-icon');
+        const icon = header.querySelector('.arrow-icon');
         content.classList.toggle('collapsed');
         icon.classList.toggle('collapsed-icon');
       }
 
-      function switchView(t, event) {
-        if(event) event.stopPropagation();
-        document.querySelectorAll('.view').forEach((v) => (v.style.display = 'none'));
-        document.querySelectorAll('.tab-menu button').forEach((b) => b.classList.remove('active'));
-        const targetView = document.getElementById(`view-${t}`);
-        targetView.style.display = t === 'tiles' ? 'grid' : 'block';
-        document.getElementById(`btn-${t}`).classList.add('active');
+      function switchView(type, e) {
+        e.stopPropagation();
+        document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
+        document.querySelectorAll('.tab-menu button').forEach(b => b.classList.remove('active'));
+        
+        const target = document.getElementById(`view-${type}`);
+        target.style.display = (type === 'tiles') ? 'grid' : 'block';
+        document.getElementById(`btn-${type}`).classList.add('active');
       }
 
       load();
