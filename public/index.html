@@ -11,8 +11,9 @@
         max-width: 600px;
         margin: 0 auto;
         color: #333;
+        line-height: 1.6;
       }
-      h1 { text-align: center; }
+      h1 { text-align: center; margin-bottom: 30px; }
       .input-group {
         margin: 20px 0;
         padding: 15px;
@@ -42,6 +43,7 @@
         border-radius: 12px;
         background-color: #0000ff;
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
         color: #fff;
@@ -50,18 +52,22 @@
         font-size: 1.5rem;
         transition: background-color 0.3s;
       }
+      #colorPreview span { font-size: 0.8rem; opacity: 0.9; }
 
-      /* 画像パレット用のスタイル */
-      #imageSection {
-        background-color: #fcfcfc;
+      /* 画像パレット・スポイト用のスタイル */
+      #imageSection { background-color: #fcfcfc; }
+      .canvas-container {
+        position: relative;
+        margin-top: 15px;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid #ddd;
+        line-height: 0;
       }
       #imgPreviewCanvas {
         max-width: 100%;
         height: auto;
         display: block;
-        margin-top: 15px;
-        border-radius: 8px;
-        border: 1px solid #ddd;
       }
       .palette-container {
         display: flex;
@@ -76,12 +82,26 @@
         border: 3px solid #fff;
         box-shadow: 0 2px 6px rgba(0,0,0,0.15);
         cursor: pointer;
-        transition: transform 0.2s, box-shadow 0.2s;
+        transition: transform 0.2s;
       }
-      .palette-btn:hover {
-        transform: scale(1.1);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      .palette-btn:hover { transform: scale(1.1); }
+
+      #eyedropperBtn {
+        padding: 8px 15px;
+        cursor: pointer;
+        border-radius: 20px;
+        border: 1px solid #ccc;
+        background: #fff;
+        font-size: 0.85em;
+        transition: all 0.2s;
       }
+      #eyedropperBtn.active {
+        background: #ffeb3b;
+        border-color: #fbc02d;
+        font-weight: bold;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+
       button[type="submit"] {
         width: 100%;
         padding: 15px;
@@ -92,6 +112,7 @@
         font-size: 1rem;
         font-weight: bold;
         cursor: pointer;
+        margin-top: 10px;
       }
       button[type="submit"]:hover { background: #000; }
     </style>
@@ -103,7 +124,10 @@
       [<a href="#" id="logout" style="color: #666; font-size: 0.9em;">ログアウト</a>]
     </p>
     
-    <div id="colorPreview">#0000FF</div>
+    <div id="colorPreview">
+      <div id="previewHex">#0000FF</div>
+      <span id="previewStatus"></span>
+    </div>
 
     <form id="colorForm">
       <div class="input-group">
@@ -125,17 +149,25 @@
         <input type="file" id="imageInput" accept="image/*" />
         
         <div id="paletteArea" style="display: none;">
-          <p style="font-size: 0.85em; color: #666; margin-top: 15px;">
-            画像から抽出されたパレット（クリックで選択）：
-          </p>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 20px;">
+            <p style="font-size: 0.85em; color: #666; margin: 0;">AI抽出パレット：</p>
+            <button type="button" id="eyedropperBtn">🔍 スポイトモード: OFF</button>
+          </div>
+          
           <div class="palette-container" id="colorPalette"></div>
-          <canvas id="imgPreviewCanvas"></canvas>
+          
+          <p style="font-size: 0.75em; color: #999; margin-bottom: 5px;" id="dropHint">
+            ※モードをONにすると画像をクリックして抽出できます
+          </p>
+          <div class="canvas-container">
+            <canvas id="imgPreviewCanvas"></canvas>
+          </div>
         </div>
       </div>
 
       <div class="input-group">
         <p><strong>💬 理由やコメント：</strong></p>
-        <input type="text" name="comment" placeholder="例：落ち着く色だから" style="width: 100%; box-sizing: border-box;" />
+        <input type="text" name="comment" placeholder="例：夕焼けのような綺麗な色だから" style="width: 100%; box-sizing: border-box;" />
       </div>
 
       <button type="submit">回答して一覧を見る</button>
@@ -148,50 +180,48 @@
       const colorPicker = document.getElementById('colorPicker');
       const colorCodeInput = document.getElementById('colorCodeInput');
       const colorPreview = document.getElementById('colorPreview');
+      const previewHex = document.getElementById('previewHex');
       const colorForm = document.getElementById('colorForm');
       const logoutLink = document.getElementById('logout');
-
-      // --- 1. UI連動ロジック ---
-
-      function updateAll(hex) {
-        const color = hex.toUpperCase();
-        colorPicker.value = color;
-        colorCodeInput.value = color;
-        colorPreview.style.backgroundColor = color;
-        colorPreview.textContent = color;
-      }
-
-      colorPicker.addEventListener('input', () => updateAll(colorPicker.value));
-
-      colorCodeInput.addEventListener('input', (e) => {
-        let value = e.target.value.trim().toUpperCase();
-        if (/^#[0-9A-F]{6}$/.test(value)) {
-          updateAll(value);
-        }
-      });
-
-      // --- 2. 画像解析機能 ---
 
       const imageInput = document.getElementById('imageInput');
       const paletteArea = document.getElementById('paletteArea');
       const colorPalette = document.getElementById('colorPalette');
       const canvas = document.getElementById('imgPreviewCanvas');
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      const eyedropperBtn = document.getElementById('eyedropperBtn');
+
+      let isEyedropperActive = false;
+
+      // --- 1. UI連動 ---
+
+      function updateAll(hex) {
+        const color = hex.toUpperCase();
+        colorPicker.value = color;
+        colorCodeInput.value = color;
+        colorPreview.style.backgroundColor = color;
+        previewHex.textContent = color;
+      }
+
+      colorPicker.addEventListener('input', () => updateAll(colorPicker.value));
+      colorCodeInput.addEventListener('input', (e) => {
+        let value = e.target.value.trim().toUpperCase();
+        if (/^#[0-9A-F]{6}$/.test(value)) updateAll(value);
+      });
+
+      // --- 2. 画像読み込み & パレット抽出 ---
 
       imageInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = (event) => {
           const img = new Image();
           img.onload = () => {
-            const maxW = 400;
-            const scale = maxW / img.width;
+            const maxW = 570; // スマホ等に合わせた表示幅
             canvas.width = maxW;
-            canvas.height = img.height * scale;
+            canvas.height = img.height * (maxW / img.width);
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
             extractDiverseColors();
             paletteArea.style.display = 'block';
           };
@@ -203,25 +233,18 @@
       function extractDiverseColors() {
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
         const colorCounts = {};
-
-        // サンプリング
         for (let i = 0; i < imageData.length; i += 40) {
           const r = imageData[i], g = imageData[i+1], b = imageData[i+2];
           const hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase()}`;
           colorCounts[hex] = (colorCounts[hex] || 0) + 1;
         }
-
         const sortedColors = Object.keys(colorCounts).sort((a, b) => colorCounts[b] - colorCounts[a]);
 
-        // 「遠い色」の抽出
         const diversePalette = [];
-        const DISTANCE_THRESHOLD = 100; // 似た色を排除する基準値
-
+        const DISTANCE_THRESHOLD = 110; 
         for (const hex of sortedColors) {
-          if (diversePalette.length >= 5) break; 
-          const isDistinct = diversePalette.every(selectedHex => {
-            return getColorDistance(hex, selectedHex) > DISTANCE_THRESHOLD;
-          });
+          if (diversePalette.length >= 5) break;
+          const isDistinct = diversePalette.every(sel => getColorDistance(hex, sel) > DISTANCE_THRESHOLD);
           if (isDistinct) diversePalette.push(hex);
         }
         renderPalette(diversePalette);
@@ -239,22 +262,49 @@
           const btn = document.createElement('div');
           btn.className = 'palette-btn';
           btn.style.backgroundColor = hex;
-          btn.title = hex; // ツールチップ表示
           btn.onclick = () => updateAll(hex);
           colorPalette.appendChild(btn);
         });
       }
 
-      // --- 3. サーバー通信機能 ---
+      // --- 3. スポイト機能 ---
+
+      eyedropperBtn.addEventListener('click', () => {
+        isEyedropperActive = !isEyedropperActive;
+        eyedropperBtn.textContent = isEyedropperActive ? "🔍 スポイトモード: ON" : "🔍 スポイトモード: OFF";
+        eyedropperBtn.classList.toggle('active', isEyedropperActive);
+        canvas.style.cursor = isEyedropperActive ? "crosshair" : "default";
+      });
+
+      canvas.addEventListener('mousedown', pickColor);
+      canvas.addEventListener('touchstart', (e) => {
+        if(isEyedropperActive) e.preventDefault();
+        pickColor(e.touches[0]);
+      }, { passive: false });
+
+      function pickColor(e) {
+        if (!isEyedropperActive) return;
+        const rect = canvas.getBoundingClientRect();
+        const x = (e.clientX || e.pageX) - rect.left;
+        const y = (e.clientY || e.pageY) - rect.top;
+        const canvasX = Math.floor(x * (canvas.width / rect.width));
+        const canvasY = Math.floor(y * (canvas.height / rect.height));
+        
+        try {
+          const pixel = ctx.getImageData(canvasX, canvasY, 1, 1).data;
+          const hex = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
+          updateAll(hex);
+        } catch (err) { console.error("スポイトエラー:", err); }
+      }
+
+      // --- 4. 既存の通信機能 ---
 
       document.addEventListener('DOMContentLoaded', async () => {
         const res = await fetch('/api/check');
         if (res.ok) {
           const data = await res.json();
           document.getElementById('loginUser').textContent = data.username;
-        } else {
-          location.href = 'login.html';
-        }
+        } else { location.href = 'login.html'; }
       });
 
       logoutLink.addEventListener('click', async (e) => {
@@ -265,23 +315,14 @@
 
       colorForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const record = {
+        const body = new FormData();
+        body.append('record', JSON.stringify({
           color: colorPicker.value.toUpperCase(),
           comment: document.querySelector('input[name="comment"]').value
-        };
-        const body = new FormData();
-        body.append('record', JSON.stringify(record));
-
-        const res = await fetch('/api/colors', {
-          method: 'POST',
-          body: body
-        });
-
-        if (res.ok) {
-          location.href = 'list.html';
-        } else {
-          alert('送信に失敗しました');
-        }
+        }));
+        const res = await fetch('/api/colors', { method: 'POST', body: body });
+        if (res.ok) location.href = 'list.html';
+        else alert('送信に失敗しました');
       });
     </script>
   </body>
