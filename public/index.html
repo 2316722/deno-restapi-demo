@@ -8,26 +8,30 @@
       body {
         padding: 20px;
         font-family: sans-serif;
+        max-width: 600px;
+        margin: 0 auto;
       }
       .input-group {
         margin: 20px 0;
+        padding: 15px;
+        border: 1px solid #eee;
+        border-radius: 8px;
       }
-      /* カラーピッカーを少し大きくして押しやすくする */
       input[type='color'] {
         width: 50px;
         height: 50px;
         cursor: pointer;
         border: none;
         background: none;
+        vertical-align: middle;
       }
       #colorPreview {
         width: 100%;
-        max-width: 300px;
-        height: 150px;
+        height: 100px;
         margin: 20px 0;
         border: 3px solid #ccc;
         border-radius: 10px;
-        background-color: #0000ff; /* 初期値 */
+        background-color: #0000ff;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -35,100 +39,179 @@
         font-weight: bold;
         text-shadow: 1px 1px 2px #000;
         font-size: 1.2rem;
+        transition: background-color 0.3s;
+      }
+
+      /* 画像パレット用のスタイル */
+      #imageSection {
+        background-color: #f9f9f9;
+      }
+      #imgPreviewCanvas {
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin-top: 10px;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+      }
+      .palette-container {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+        flex-wrap: wrap;
+      }
+      .palette-btn {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        border: 3px solid #fff;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        cursor: pointer;
+        transition: transform 0.2s;
+      }
+      .palette-btn:hover {
+        transform: scale(1.1);
       }
     </style>
   </head>
   <body>
     <h1>あなたの好きな色は？</h1>
     <p>ユーザー: <span id="loginUser">...</span> (<a href="#" id="logout">ログアウト</a>)</p>
+    
     <div id="colorPreview">#0000FF</div>
 
     <form id="colorForm">
       <div class="input-group">
-        <p>色を選んでね：</p>
-        
+        <p><strong>方法1：自分で選ぶ</strong></p>
         <label>
-          <input type="color" id="colorPicker" name="color_picker" value="#0000ff" />
-          カラーピッカーで選択
+          <input type="color" id="colorPicker" value="#0000ff" />
+          カラーピッカー
         </label>
-        
-        <br>
-        
-        <label style="margin-top: 10px; display: block;">
-          <input type="text" id="colorCodeInput" name="color_code" value="#0000ff" 
-                 placeholder="#RRGGBB 形式で入力" style="width: 150px;" maxlength="7" />
-          直接カラーコードを入力
+        <label style="margin-left: 15px;">
+          <input type="text" id="colorCodeInput" value="#0000FF" maxlength="7" style="width: 80px;" />
+          コード入力
         </label>
-        
+      </div>
+
+      <div class="input-group" id="imageSection">
+        <p><strong>方法2：画像から色を作る</strong></p>
+        <input type="file" id="imageInput" accept="image/*" />
+        <div id="paletteArea" style="display: none;">
+          <p style="font-size: 0.85em; color: #666;">画像から抽出されたパレット（クリックで選択）：</p>
+          <div class="palette-container" id="colorPalette"></div>
+          <canvas id="imgPreviewCanvas"></canvas>
+        </div>
       </div>
 
       <div class="input-group">
         <p>理由やコメント：</p>
-        <input type="text" name="comment" placeholder="例：目が覚める色だから" style="width: 300px" />
+        <input type="text" name="comment" placeholder="例：目が覚める色だから" style="width: 100%; box-sizing: border-box; padding: 8px;" />
       </div>
 
-      <button type="submit">回答して一覧を見る</button>
+      <button type="submit" style="width: 100%; padding: 12px; background: #333; color: white; border: none; border-radius: 5px; cursor: pointer;">回答して一覧を見る</button>
     </form>
 
     <hr />
     <p><a href="list.html">回答せずに一覧だけ見る</a></p>
 
     <script>
-      // DOM要素の取得
       const colorPicker = document.getElementById('colorPicker');
       const colorCodeInput = document.getElementById('colorCodeInput');
-      const logoutLink = document.getElementById('logout');
-      const colorForm = document.getElementById('colorForm');
-
-      // ----------------------------------------------------
-      // 相互同期ロジック
-      // ----------------------------------------------------
-
-      // カラーピッカーの値が変更されたら、テキスト入力欄を更新
-      colorPicker.addEventListener('input', () => {
-          colorCodeInput.value = colorPicker.value.toUpperCase();
-     });
-
-      // テキスト入力欄の値が変更されたら、有効なHexコードであればカラーピッカーを更新
-      colorCodeInput.addEventListener('input', (e) => {
-          let value = e.target.value.trim().toUpperCase();
-
-          // Hexコード形式（#に続く6桁の英数字）か検証
-          if (/^#[0-9A-F]{6}$/.test(value)) {
-              colorPicker.value = value;
-          } 
-          // 有効なHex形式でない場合は、カラーピッカーは更新しない（無効な入力状態を許容）
-      });
-       
       const colorPreview = document.getElementById('colorPreview');
-      // カラーピッカーの値が変更されたら、テキストとプレビューを更新
-      colorPicker.addEventListener('input', () => {
-      const color = colorPicker.value.toUpperCase();
-      colorCodeInput.value = color;
-      updatePreview(color);
-    });
+      const colorForm = document.getElementById('colorForm');
+      const logoutLink = document.getElementById('logout');
 
-  // テキスト入力欄の値が変更されたら、プレビューも更新
-    colorCodeInput.addEventListener('input', (e) => {
-        let value = e.target.value.trim().toUpperCase();
-        if (/^#[0-9A-F]{6}$/.test(value)) {
-          colorPicker.value = value;
-          updatePreview(value);
-       } 
-      });
-      // プレビューの色と文字を更新する関数
-      function updatePreview(color) {
+      // 共通の更新関数
+      function updateAll(hex) {
+        const color = hex.toUpperCase();
+        colorPicker.value = color;
+        colorCodeInput.value = color;
         colorPreview.style.backgroundColor = color;
         colorPreview.textContent = color;
-      
-      // 背景が明るい色なら文字を黒にするなどの工夫も可能
-      // 今回はシンプルに色の表示のみ
       }
-      // ----------------------------------------------------
-      // 既存の機能
-      // ----------------------------------------------------
 
-      // ログインチェック
+      // 1. カラーピッカー連動
+      colorPicker.addEventListener('input', () => updateAll(colorPicker.value));
+
+      // 2. テキスト入力連動
+      colorCodeInput.addEventListener('input', (e) => {
+        let value = e.target.value.trim().toUpperCase();
+        if (/^#[0-9A-F]{6}$/.test(value)) {
+          updateAll(value);
+        }
+      });
+
+      // ----------------------------------------------------
+      // 【新規追加】画像から色を抽出する機能
+      // ----------------------------------------------------
+      const imageInput = document.getElementById('imageInput');
+      const paletteArea = document.getElementById('paletteArea');
+      const colorPalette = document.getElementById('colorPalette');
+      const canvas = document.getElementById('imgPreviewCanvas');
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+      imageInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            // プレビュー用にキャンバスのサイズを調整（最大幅400px）
+            const maxW = 400;
+            const scale = maxW / img.width;
+            canvas.width = maxW;
+            canvas.height = img.height * scale;
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            // 色の抽出
+            extractColors();
+            paletteArea.style.display = 'block';
+          };
+          img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+
+      function extractColors() {
+        // キャンバスからピクセルデータを取得
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        const colorCounts = {};
+
+        // 粗くサンプリング（10ピクセルごとにチェックして計算量を減らす）
+        for (let i = 0; i < imageData.length; i += 40) {
+          const r = imageData[i];
+          const g = imageData[i + 1];
+          const b = imageData[i + 2];
+          // 彩度が低すぎる（グレーに近い）ものはスキップするか、少し丸める
+          // ここでは16進数に変換
+          const hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase()}`;
+          colorCounts[hex] = (colorCounts[hex] || 0) + 1;
+        }
+
+        // 頻出順にソートして上位5色を表示
+        const sorted = Object.keys(colorCounts)
+          .sort((a, b) => colorCounts[b] - colorCounts[a])
+          .slice(0, 5);
+
+        renderPalette(sorted);
+      }
+
+      function renderPalette(colors) {
+        colorPalette.innerHTML = '';
+        colors.forEach(hex => {
+          const btn = document.createElement('div');
+          btn.className = 'palette-btn';
+          btn.style.backgroundColor = hex;
+          btn.onclick = () => updateAll(hex);
+          colorPalette.appendChild(btn);
+        });
+      }
+
+      // ----------------------------------------------------
+      // 既存の通信機能
+      // ----------------------------------------------------
       document.addEventListener('DOMContentLoaded', async () => {
         const res = await fetch('/api/check');
         if (res.ok) {
@@ -139,36 +222,22 @@
         }
       });
 
-      // ログアウト処理
       logoutLink.addEventListener('click', async (e) => {
         e.preventDefault();
         await fetch('/api/logout', { method: 'POST' });
         location.href = 'login.html';
       });
 
-      // 送信処理 (変更あり)
       colorForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
-        // 最終的に送信するカラーコードを決定
-        // 1. まずピッカーの値を初期値として採用
         let finalColor = colorPicker.value.toUpperCase(); 
-
-        // 2. テキストボックスに入力された値が有効なHexコードであれば、そちらを優先
-        const inputValue = colorCodeInput.value.trim().toUpperCase();
-        if (/^#[0-9A-F]{6}$/.test(inputValue)) {
-            finalColor = inputValue;
-        }
-
         const record = {
-          color: finalColor, // 決定された最終的なカラーコード
-          comment: document.querySelector('input[name="comment"]').value // コメントの値を取得
+          color: finalColor,
+          comment: document.querySelector('input[name="comment"]').value
         };
-
         const body = new FormData();
         body.append('record', JSON.stringify(record));
 
-        // 送信
         const res = await fetch('/api/colors', {
           method: 'POST',
           body: body
@@ -180,7 +249,6 @@
           alert('送信に失敗しました');
         }
       });
-      
     </script>
   </body>
 </html>
