@@ -119,11 +119,11 @@
   <body>
     <div class="nav-header">
       <a href="index.html">← 入力画面</a>
-      <a href="mypage.html" class="mypage-link">👤 マイページへ</a>
+      <a href="mypage.html" class="mypage-link"><i class="uil uil-user"></i> マイページへ</a>
     </div>
 
     <div class="ranking-area">
-      <h2>🎨 色系統別 人気ランキング</h2>
+      <h2><i class="uil uil-palette"></i> 色系統別 人気ランキング</h2>
       <div id="rankingList">集計中...</div>
     </div>
 
@@ -253,7 +253,7 @@
             <td>${item.comment || ''}</td>
             <td><small>${new Date(item.createdAt).toLocaleString()}</small></td>
             <td><button class="fav-btn ${item.isFavorite ? 'active' : ''}" onclick="toggleFav('${item.id}', this)">
-              <i class="uil uil-book"></i>
+              <i class="uil uil-bookmark-full"></i>
             </button></td>
           </tr>`;
           })
