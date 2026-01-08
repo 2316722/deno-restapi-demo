@@ -1,292 +1,220 @@
 <!DOCTYPE html>
 <html lang="ja">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>みんなの好きな色</title>
-    <style>
-      body {
-        padding: 20px;
-        font-family: sans-serif;
-        max-width: 800px;
-        margin: 0 auto;
-      }
-
-      /* ランキングエリアのスタイル */
-      .ranking-area {
-        background-color: #f9f9f9;
-        padding: 20px;
-        border-radius: 8px;
-        margin-bottom: 30px;
-      }
-      .rank-row {
-        display: flex;
-        align-items: center;
-        margin-bottom: 8px;
-      }
-      .rank-label {
-        width: 80px;
-        font-weight: bold;
-      }
-      .rank-bar-bg {
-        flex-grow: 1;
-        background-color: #ddd;
-        height: 20px;
-        border-radius: 10px;
-        overflow: hidden;
-        margin-right: 10px;
-      }
-      .rank-bar {
-        height: 100%;
-        text-align: right;
-        padding-right: 5px;
-        color: white;
-        font-size: 12px;
-        line-height: 20px;
-        transition: width 0.5s;
-      }
-      .rank-count {
-        width: 40px;
-        text-align: right;
-      }
-
-      /* テーブルのスタイル */
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-      }
-      th,
-      td {
-        border: 1px solid #ccc;
-        padding: 8px;
-        text-align: left;
-        vertical-align: middle;
-      }
-      th {
-        background-color: #f0f0f0;
-      }
-      .color-box {
-        width: 30px;
-        height: 30px;
-        border: 1px solid #999;
-        display: inline-block;
-        vertical-align: middle;
-        margin-right: 10px;
-        border-radius: 4px;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>みんなの好きな色ランキング</h1>
-    <p><a href="index.html">← 入力画面に戻る</a></p>
-
-    <div class="ranking-area">
-      <h2>🎨 色系統別 人気ランキング</h2>
-      <div id="rankingList">集計中...</div>
-    </div>
-
-    <h2>すべての回答一覧</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>ユーザー</th>
-          <th>好きな色</th>
-          <th>判定</th>
-          <th>コメント</th>
-          <th>日時</th>
-        </tr>
-      </thead>
-      <tbody id="listBody"></tbody>
-    </table>
-
-    <script>
-      // 1. 判定用の設定（名前のみ利用、色相の範囲で判定するためRGB値は不要になります）
-const CATEGORIES = {
-  RED: '赤系',
-  ORANGE: 'オレンジ系',
-  YELLOW: '黄色系',
-  GREEN: '緑系',
-  CYAN: '水色系',
-  BLUE: '青系',
-  PURPLE: '紫系',
-  PINK: 'ピンク系',
-  BROWN: '茶色系',
-  GRAY: '白・グレー系',
-  BLACK: '黒系'
-};
-
-// グラフ表示用の色設定（ランキング表示用）
-const CATEGORY_CSS = {
-  [CATEGORIES.RED]: '#ff4d4d',
-  [CATEGORIES.ORANGE]: '#ffa500',
-  [CATEGORIES.YELLOW]: '#ffd700',
-  [CATEGORIES.GREEN]: '#4caf50',
-  [CATEGORIES.CYAN]: '#00bcd4',
-  [CATEGORIES.BLUE]: '#2196f3',
-  [CATEGORIES.PURPLE]: '#9c27b0',
-  [CATEGORIES.PINK]: '#e91e63',
-  [CATEGORIES.BROWN]: '#795548',
-  [CATEGORIES.GRAY]: '#9e9e9e',
-  [CATEGORIES.BLACK]: '#333333'
-};
-
-// 2. HSVによる高度な色判定ロジック
-function getColorCategory(hex) {
-  hex = hex.replace('#', '');
-  const r = parseInt(hex.substring(0, 2), 16) / 255;
-  const g = parseInt(hex.substring(2, 4), 16) / 255;
-  const b = parseInt(hex.substring(4, 6), 16) / 255;
-
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  const v = max; // 明度
-  const d = max - min;
-  const s = max === 0 ? 0 : d / max; // 彩度
-  let h; // 色相
-
-  if (max === min) {
-    h = 0; // アクロマティック（無彩色）
-  } else {
-    switch (max) {
-      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-      case g: h = (b - r) / d + 2; break;
-      case b: h = (r - g) / d + 4; break;
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>みんなの好きな色</title>
+  <style>
+    body {
+      padding: 20px;
+      font-family: sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
     }
-    h /= 6;
-  }
+    .ranking-area {
+      background-color: #f9f9f9;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+    }
+    .rank-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .rank-label {
+      width: 80px;
+      font-weight: bold;
+    }
+    .rank-bar-bg {
+      flex-grow: 1;
+      background-color: #ddd;
+      height: 20px;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-right: 10px;
+    }
+    .rank-bar {
+      height: 100%;
+      text-align: right;
+      padding-right: 5px;
+      color: white;
+      font-size: 12px;
+      line-height: 20px;
+      transition: width 0.5s;
+    }
+    .rank-count {
+      width: 40px;
+      text-align: right;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+      vertical-align: middle;
+    }
+    th {
+      background-color: #f0f0f0;
+    }
+    .color-box {
+      width: 30px;
+      height: 30px;
+      border: 1px solid #999;
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 10px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h1>みんなの好きな色ランキング</h1>
+  <p><a href="index.html">← 入力画面に戻る</a></p>
 
-  const hueDegrees = h * 360; // 0-360
-  const satPercent = s * 100; // 0-100
-  const valPercent = v * 100; // 0-100
+  <div class="ranking-area">
+    <h2>🎨 色系統別 人気ランキング</h2>
+    <div id="rankingList">集計中...</div>
+  </div>
 
-  // --- 判定アルゴリズム ---
+  <h2>すべての回答一覧</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>ユーザー</th>
+        <th>好きな色</th>
+        <th>判定</th>
+        <th>コメント</th>
+        <th>日時</th>
+      </tr>
+    </thead>
+    <tbody id="listBody"></tbody>
+  </table>
 
-  // 1. 明度が極端に低い場合は「黒」
-  if (valPercent < 35) return { name: CATEGORIES.BLACK, css: CATEGORY_CSS[CATEGORIES.BLACK] };
+  <script>
+    const CATEGORIES = {
+      RED: '赤系', ORANGE: 'オレンジ系', YELLOW: '黄色系', GREEN: '緑系',
+      CYAN: '水色系', BLUE: '青系', PURPLE: '紫系', PINK: 'ピンク系',
+      BROWN: '茶色系', GRAY: '白・グレー系', BLACK: '黒系'
+    };
 
-  // 2. 彩度が低い場合は「白・グレー」
-  if (satPercent < 15) return { name: CATEGORIES.GRAY, css: CATEGORY_CSS[CATEGORIES.GRAY] };
+    const CATEGORY_CSS = {
+      [CATEGORIES.RED]: '#ff4d4d', [CATEGORIES.ORANGE]: '#ffa500', [CATEGORIES.YELLOW]: '#ffd700',
+      [CATEGORIES.GREEN]: '#4caf50', [CATEGORIES.CYAN]: '#00bcd4', [CATEGORIES.BLUE]: '#2196f3',
+      [CATEGORIES.PURPLE]: '#9c27b0', [CATEGORIES.PINK]: '#e91e63', [CATEGORIES.BROWN]: '#795548',
+      [CATEGORIES.GRAY]: '#9e9e9e', [CATEGORIES.BLACK]: '#333333'
+    };
 
-  // 3. 茶色の判定（オレンジ付近で明度が低いもの）
-  if (hueDegrees >= 10 && hueDegrees < 45 && valPercent < 50) {
-    return { name: CATEGORIES.BROWN, css: CATEGORY_CSS[CATEGORIES.BROWN] };
-  }
-
-  // 4. 色相(Hue)による分類
-  let name = '';
-  if (hueDegrees < 20 || hueDegrees >= 355) name = CATEGORIES.RED;
-  else if (hueDegrees < 45) name = CATEGORIES.ORANGE;
-  else if (hueDegrees < 70) name = CATEGORIES.YELLOW;
-  else if (hueDegrees < 160) name = CATEGORIES.GREEN;
-  else if (hueDegrees < 200) name = CATEGORIES.CYAN;
-  else if (hueDegrees < 260) name = CATEGORIES.BLUE;
-  else if (hueDegrees < 300) name = CATEGORIES.PURPLE;
-  else name = CATEGORIES.PINK;
-
-  return { name: name, css: CATEGORY_CSS[name] };
-}
-
-      // ログインチェック ＆ データ取得
-      document.addEventListener('DOMContentLoaded', async () => {
-        const checkRes = await fetch('/api/check');
-        if (!checkRes.ok) {
-          location.href = 'login.html';
-          return;
+    function getColorCategory(hex) {
+      hex = hex.replace('#', '');
+      const r = parseInt(hex.substring(0, 2), 16) / 255;
+      const g = parseInt(hex.substring(2, 4), 16) / 255;
+      const b = parseInt(hex.substring(4, 6), 16) / 255;
+      const max = Math.max(r, g, b), min = Math.min(r, g, b);
+      const v = max, d = max - min;
+      const s = max === 0 ? 0 : d / max;
+      let h = 0;
+      if (max !== min) {
+        switch (max) {
+          case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+          case g: h = (b - r) / d + 2; break;
+          case b: h = (r - g) / d + 4; break;
         }
+        h /= 6;
+      }
+      const hDeg = h * 360, sPct = s * 100, vPct = v * 100;
+      if (vPct < 35) return { name: CATEGORIES.BLACK, css: CATEGORY_CSS[CATEGORIES.BLACK] };
+      if (sPct < 15) return { name: CATEGORIES.GRAY, css: CATEGORY_CSS[CATEGORIES.GRAY] };
+      if (hDeg >= 10 && hDeg < 45 && vPct < 50) return { name: CATEGORIES.BROWN, css: CATEGORY_CSS[CATEGORIES.BROWN] };
+      let name = '';
+      if (hDeg < 20 || hDeg >= 355) name = CATEGORIES.RED;
+      else if (hDeg < 45) name = CATEGORIES.ORANGE;
+      else if (hDeg < 70) name = CATEGORIES.YELLOW;
+      else if (hDeg < 160) name = CATEGORIES.GREEN;
+      else if (hDeg < 200) name = CATEGORIES.CYAN;
+      else if (hDeg < 260) name = CATEGORIES.BLUE;
+      else if (hDeg < 300) name = CATEGORIES.PURPLE;
+      else name = CATEGORIES.PINK;
+      return { name, css: CATEGORY_CSS[name] };
+    }
 
-        const res = await fetch('/api/colors');
-        if (res.ok) {
-          const list = await res.json();
+    document.addEventListener('DOMContentLoaded', async () => {
+      const checkRes = await fetch('/api/check');
+      if (!checkRes.ok) { location.href = 'login.html'; return; }
+
+      const res = await fetch('/api/colors');
+      if (res.ok) {
+        const list = await res.json();
         
-        // --- 【ここから追加】カラーコードごとの出現回数を事前に集計 ---
+        // 1. カラーコードごとの出現回数を集計
         const hexCounts = {};
         list.forEach(item => {
-        const hex = item.color.toUpperCase(); // 大文字に統一してカウント
-        hexCounts[hex] = (hexCounts[hex] || 0) + 1;
-          });
+          const hex = item.color.toUpperCase();
+          hexCounts[hex] = (hexCounts[hex] || 0) + 1;
+        });
 
-          // --- 集計処理 ---
-         // --- 1. 集計の準備 ---
-          const counts = {}; 
-          Object.values(CATEGORIES).forEach(name => counts[name] = 0);
+        // 2. 系統別の集計
+        const counts = {};
+        Object.values(CATEGORIES).forEach(name => counts[name] = 0);
 
-          const tbody = document.getElementById('listBody');
-          tbody.innerHTML = ''; 
+        const tbody = document.getElementById('listBody');
+        tbody.innerHTML = '';
 
-          // --- 2. データのループ処理 ---
-          list.forEach((item) => {
-            const category = getColorCategory(item.color);
-            if (counts[category.name] !== undefined) counts[category.name]++;
+        // 3. テーブルの描画と系統別カウント
+        list.forEach((item) => {
+          const category = getColorCategory(item.color);
+          if (counts[category.name] !== undefined) counts[category.name]++;
 
-            const tr = document.createElement('tr');
-            const date = new Date(item.createdAt).toLocaleString();
-            tr.innerHTML = `
-              <td>${item.author}</td>
-              <td>
-                <div class="color-box" style="background-color: ${item.color};"></div>
-                <span>${item.color}</span>
-              </td>
-              <td>${category.name}</td> 
-              <td>${item.comment || ''}</td>
-              <td style="font-size: 0.8em; color: gray;">${date}</td>
-            `;
-            tbody.appendChild(tr);
-          });
-          const sameColorCount = hexCounts[item.color.toUpperCase()]; // 全体で何人いるか取得
-
-        const tr = document.createElement('tr');
-        const date = new Date(item.createdAt).toLocaleString();
-        tr.innerHTML = `
-        <td>${item.author}</td>
-        <td>
-          <div class="color-box" style="background-color: ${item.color};"></div>
-          <span>${item.color}</span>
-        </td>
-        <td>
-          <strong>${category.name}</strong><br>
-          <span style="font-size: 0.85em; color: #666;">
-            同じ色を選んだ人: ${sameColorCount}人
-          </span>
-        </td> 
-        <td>${item.comment || ''}</td>
-        <td style="font-size: 0.8em; color: gray;">${date}</td>
-        `;
+          const sameColorCount = hexCounts[item.color.toUpperCase()];
+          const date = new Date(item.createdAt).toLocaleString();
+          
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${item.author}</td>
+            <td>
+              <div class="color-box" style="background-color: ${item.color};"></div>
+              <span>${item.color}</span>
+            </td>
+            <td>
+              <strong>${category.name}</strong><br>
+              <span style="font-size: 0.85em; color: #666;">
+                同じ色を選んだ人: ${sameColorCount}人
+              </span>
+            </td> 
+            <td>${item.comment || ''}</td>
+            <td style="font-size: 0.8em; color: gray;">${date}</td>
+          `;
           tbody.appendChild(tr);
-       });
+        });
 
-          // --- 3. ランキング表示の準備 ---
-          const rankingList = document.getElementById('rankingList');
-          rankingList.innerHTML = '';
+        // 4. ランキング表示
+        const rankingList = document.getElementById('rankingList');
+        rankingList.innerHTML = '';
+        const total = list.length || 1;
+        const sortedCategories = Object.values(CATEGORIES)
+          .map(name => ({ name, count: counts[name], css: CATEGORY_CSS[name] }))
+          .sort((a, b) => b.count - a.count);
 
-          const sortedCategories = Object.values(CATEGORIES).map((name) => {
-            return { name: name, count: counts[name], css: CATEGORY_CSS[name] };
-          }).sort((a, b) => b.count - a.count);
-          // 合計数（グラフの％計算用）
-          const total = list.length || 1;
-
-          sortedCategories.forEach((cat) => {
-            // 0件のものは表示しない（好みで消してもOK）
-            if (cat.count === 0) return;
-
-            const percent = (cat.count / total) * 100;
-
-            const div = document.createElement('div');
-            div.className = 'rank-row';
-            div.innerHTML = `
+        sortedCategories.forEach(cat => {
+          if (cat.count === 0) return;
+          const percent = (cat.count / total) * 100;
+          const div = document.createElement('div');
+          div.className = 'rank-row';
+          div.innerHTML = `
             <div class="rank-label">${cat.name}</div>
             <div class="rank-bar-bg">
               <div class="rank-bar" style="width: ${percent}%; background-color: ${cat.css};"></div>
             </div>
             <div class="rank-count">${cat.count}票</div>
           `;
-            rankingList.appendChild(div);
-          });
-
-          if (rankingList.innerHTML === '') {
-            rankingList.innerHTML = 'まだデータがありません';
-          }
-        }
-      });
-    </script>
-  </body>
+          rankingList.appendChild(div);
+        });
+      }
+    });
+  </script>
+</body>
 </html>
