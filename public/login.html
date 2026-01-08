@@ -3,50 +3,153 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ログインページ</title>
-    <!-- prettier-ignore -->
+    <title>ログイン - 好きな色教えて</title>
     <style>
-      form { margin: 2em 1em; }
-      label { display: block; margin: 1ex 0; }
+      /* メインページと共通のスタイル */
+      body {
+        padding: 15px;
+        font-family: sans-serif;
+        max-width: 450px;
+        margin: 0 auto;
+        color: #333;
+        line-height: 1.4;
+        background-color: #f8f9fa;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-height: 90vh;
+      }
+      h1 { text-align: center; margin-bottom: 25px; font-size: 1.6rem; color: #111; }
+      
+      .login-card {
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 12px;
+        background-color: #fff;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      }
+
+      .input-group {
+        margin-bottom: 15px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+        font-weight: bold;
+        color: #666;
+      }
+
+      input[type='text'], input[type='password'] {
+        padding: 12px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 1rem;
+        box-sizing: border-box; 
+        width: 100%;
+        background-color: #fdfdfd;
+        transition: border-color 0.2s;
+      }
+
+      input:focus {
+        outline: none;
+        border-color: #222;
+      }
+
+      button[type="submit"] {
+        width: 100%;
+        padding: 14px;
+        background: #222;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 1rem;
+        font-weight: bold;
+        cursor: pointer;
+        margin-top: 10px;
+        transition: background 0.2s;
+      }
+      button[type="submit"]:active { background: #555; }
+
+      .error-msg {
+        color: #d32f2f;
+        background-color: #ffebee;
+        padding: 10px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        text-align: center;
+        margin-bottom: 15px;
+        display: none; /* 初期は非表示 */
+      }
+
+      .footer-links {
+        text-align: center;
+        margin-top: 25px;
+        font-size: 0.9rem;
+      }
+      .footer-links a {
+        color: #555;
+        text-decoration: underline;
+      }
     </style>
   </head>
   <body>
     <h1>ログイン</h1>
-    <form id="loginForm">
-      <label>
-        ユーザー名：
-        <input type="text" id="username" placeholder="ユーザー名" required />
-      </label>
-      <label>
-        パスワード：
-        <input type="password" id="password" placeholder="パスワード" required />
-      </label>
-      <button type="submit">ログイン</button>
-    </form>
 
-    <p></p>
+    <div class="login-card">
+      <div id="errorMessage" class="error-msg"></div>
 
-    <a href="signup.html">ユーザー登録ページへ</a>
-  </body>
-  <script>
-    const form = document.querySelector('form');
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const username = document.getElementById('username').value;
-      const password = document.getElementById('password').value;
+      <form id="loginForm">
+        <div class="input-group">
+          <label for="username">ユーザー名</label>
+          <input type="text" id="username" placeholder="名前を入力してください" required />
+        </div>
 
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        <div class="input-group">
+          <label for="password">パスワード</label>
+          <input type="password" id="password" placeholder="••••••••" required />
+        </div>
+
+        <button type="submit">ログイン</button>
+      </form>
+    </div>
+
+    <div class="footer-links">
+      <a href="signup.html">初めての方はこちら（ユーザー登録）</a>
+    </div>
+
+    <script>
+      const form = document.getElementById('loginForm');
+      const errorDiv = document.getElementById('errorMessage');
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        // メッセージをリセット
+        errorDiv.style.display = 'none';
+
+        try {
+          const res = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+          });
+
+          if (res.ok) {
+            location.href = 'index.html';
+          } else {
+            const data = await res.json();
+            errorDiv.textContent = data.message || 'ログインに失敗しました';
+            errorDiv.style.display = 'block';
+          }
+        } catch (err) {
+          errorDiv.textContent = '通信エラーが発生しました';
+          errorDiv.style.display = 'block';
+        }
       });
-
-      if (res.ok) {
-        location.href = 'index.html';
-      } else {
-        const data = await res.json();
-        document.querySelector('p').textContent = data.message;
-      }
-    });
-  </script>
+    </script>
+  </body>
 </html>
