@@ -4,11 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>みんなの好きな色</title>
+    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css" />
     <style>
       body {
         padding: 20px;
         font-family: sans-serif;
-        max-width: 800px;
+        max-width: 900px;
         margin: 0 auto;
         background-color: #f0f2f5;
       }
@@ -84,20 +85,27 @@
         gap: 10px;
         align-items: center;
       }
+
+      /* Unicons 用スタイル */
       .fav-btn {
         cursor: pointer;
         border: none;
         background: none;
-        font-size: 1.2rem;
-        filter: grayscale(1);
-        transition: transform 0.2s;
+        font-size: 1.5rem;
+        color: #ccc;
+        transition: 0.2s;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
       .fav-btn.active {
-        filter: grayscale(0);
-      }
+        color: #f39c12;
+      } /* お気に入り時はオレンジ色に */
       .fav-btn:hover {
-        transform: scale(1.2);
+        transform: scale(1.1);
       }
+
       .mypage-link {
         background: #333;
         color: white;
@@ -132,12 +140,12 @@
     <table>
       <thead>
         <tr>
-          <th>🔖</th>
           <th>ユーザー</th>
           <th>好きな色</th>
           <th>判定</th>
           <th>コメント</th>
           <th>日時</th>
+          <th>保存</th>
         </tr>
       </thead>
       <tbody id="listBody"></tbody>
@@ -237,9 +245,6 @@
             const others = (hexCounts[item.color.toUpperCase()] || 0) - 1;
             return `
           <tr>
-            <td><button class="fav-btn ${item.isFavorite ? 'active' : ''}" onclick="toggleFav('${
-              item.id
-            }', this)">🔖</button></td>
             <td>${item.author}</td>
             <td><div class="color-box" style="background:${item.color}"></div>${item.color}</td>
             <td><strong>${cat.name}</strong><br><small style="color:gray">${
@@ -247,6 +252,9 @@
             }</small></td>
             <td>${item.comment || ''}</td>
             <td><small>${new Date(item.createdAt).toLocaleString()}</small></td>
+            <td><button class="fav-btn ${item.isFavorite ? 'active' : ''}" onclick="toggleFav('${item.id}', this)">
+              <i class="uil uil-book"></i>
+            </button></td>
           </tr>`;
           })
           .join('');
