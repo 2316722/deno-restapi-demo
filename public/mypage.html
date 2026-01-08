@@ -54,18 +54,11 @@
         aspect-ratio: 1;
         border-radius: 3px;
       }
-      #view-gradient,
-      #view-cloud {
+      #view-gradient {
         width: 100%;
         height: 100%;
       }
-      .cloud-bubble {
-        position: absolute;
-        border-radius: 50%;
-        mix-blend-mode: overlay;
-        filter: blur(8px);
-        opacity: 0.8;
-      }
+      /* クラウド関連のCSSを削除 */
       .section-title {
         font-size: 1.1rem;
         font-weight: bold;
@@ -104,14 +97,12 @@
     <div class="tab-menu">
       <button onclick="switchView('tiles')" id="btn-tiles" class="active">タイル</button>
       <button onclick="switchView('gradient')" id="btn-gradient">グラデーション</button>
-      <button onclick="switchView('cloud')" id="btn-cloud">クラウド</button>
-    </div>
+      </div>
 
     <div class="visual-container">
       <div id="view-tiles" class="view"></div>
       <div id="view-gradient" class="view" style="display: none"></div>
-      <div id="view-cloud" class="view" style="display: none"></div>
-    </div>
+      </div>
 
     <div class="section-title"><i class="uil uil-edit"></i> 自分が投稿した色</div>
     <div id="myPosts" class="color-list"></div>
@@ -142,18 +133,7 @@
           document.getElementById('view-gradient').style.background =
             myColors.length > 1 ? `linear-gradient(135deg, ${myColors.join(',')})` : myColors[0];
         }
-        const cloud = document.getElementById('view-cloud');
-        cloud.innerHTML = '';
-        myColors.forEach((c) => {
-          const b = document.createElement('div');
-          b.className = 'cloud-bubble';
-          const size = Math.random() * 120 + 60;
-          b.style.width = b.style.height = size + 'px';
-          b.style.background = c;
-          b.style.left = Math.random() * 80 + '%';
-          b.style.top = Math.random() * 60 + '%';
-          cloud.appendChild(b);
-        });
+        // クラウド描画ロジックを削除
       }
       function switchView(t) {
         document.querySelectorAll('.view').forEach((v) => (v.style.display = 'none'));
