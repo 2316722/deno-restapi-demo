@@ -27,7 +27,13 @@ app.post('/api/login', async (c) => {
   if (!user || !(await verify(password, user.hashedPassword))) return c.json({ message: '無効' }, 401);
   const payload = { sub: user.username, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 };
   const token = await sign(payload, JWT_SECRET);
-  setCookie(c, COOKIE_NAME, token, { path: '/', httpOnly: true, sameSite: 'Strict' });
+  setCookie(c, COOKIE_NAME, token, {
+    path: '/',
+    httpOnly: true,
+    sameSite: 'Strict',
+    maxAge: EXP_TIME // 1日
+  });
+
   return c.json({ message: 'ログイン成功', username: user.username });
 });
 
