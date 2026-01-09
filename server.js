@@ -7,6 +7,9 @@ import { hash, verify } from 'jsr:@felix/bcrypt';
 const JWT_SECRET = Deno.env.get('JWT_SECRET') || 'your-secret-key';
 const COOKIE_NAME = 'auth_token';
 
+// --- 追加：有効期限（1日分 = 60秒 * 60分 * 24時間） ---
+const EXP_TIME = 60 * 60 * 24;
+
 const app = new Hono();
 const kv = await Deno.openKv();
 
@@ -24,14 +27,25 @@ app.post('/api/login', async (c) => {
   const { username, password } = await c.req.json();
   const userEntry = await kv.get(['users', username]);
   const user = userEntry.value;
-  if (!user || !(await verify(password, user.hashedPassword))) return c.json({ message: '無効' }, 401);
-  const payload = { sub: user.username, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 };
+
+  if (!user || !(await verify(password, user.hashedPassword))) {
+    return c.json({ message: '無効' }, 401);
+  }
+
+  // payloadの中のexpに期限を設定
+  const payload = {
+    sub: user.username,
+    exp: Math.floor(Date.now() / 1000) + EXP_TIME
+  };
+
   const token = await sign(payload, JWT_SECRET);
+
+  // Cookie自体の期限(maxAge)にも同じ期限を設定
   setCookie(c, COOKIE_NAME, token, {
     path: '/',
     httpOnly: true,
     sameSite: 'Strict',
-    maxAge: EXP_TIME // 1日
+    maxAge: EXP_TIME // これで500エラーが消えます
   });
 
   return c.json({ message: 'ログイン成功', username: user.username });
